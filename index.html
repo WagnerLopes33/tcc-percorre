@@ -1,99 +1,71 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Percorre — Planeje sua reforma</title>
-        <link rel="stylesheet" href="style.css">
-        <script src="script.js" defer></script>
-    </head>
-    <body>
-        <header>
-            <a class="brand" href="index.html">
-                ▰ percorre<span>.</span>
-            </a>
-            <small>MENOS DESPERDÍCIO. MAIS CLAREZA.</small>
-        </header>
-        <main>
-            <section class="intro">
-                <span class="eyebrow">UM PRIMEIRO PASSO PARA SUA OBRA</span>
-                <h1>
-                    Pequena reforma.
-                    <br>
-                    <em>Grandes planos.</em>
-                </h1>
-                <p>Descubra quanto material você pode precisar, organize suas compras e converse com profissionais com mais confiança.</p>
-                <span class="badge">✓ Simples de usar, mesmo sem entender de obras.</span>
-            </section>
-            <section class="workspace" aria-label="Calculadora de materiais">
-                <div class="calculator">
-                    <h2>
-                        <span class="step">01</span>
-                        O que vamos reformar?
-                    </h2>
-                    <p class="hint">Escolha um serviço para começar.</p>
-                    <div class="tabs" role="group" aria-label="Tipo de serviço">
-                        <button type="button" data-service="pintura" aria-pressed="true">
-                            ▤
-                            <span>Pintura</span>
-                        </button>
-                        <button type="button" data-service="piso" aria-pressed="false">
-                            ▦
-                            <span>Piso</span>
-                        </button>
-                        <button type="button" data-service="contrapiso" aria-pressed="false">
-                            ▱
-                            <span>Contrapiso</span>
-                        </button>
-                    </div>
-                    <h2>
-                        <span class="step">02</span>
-                        Conte um pouco do espaço
-                    </h2>
-                    <p id="help" class="hint"></p>
-                    <form id="form">
-                        <div id="fields"></div>
-                        <div class="form-footer">
-                            <small>Medidas em metros. Ex.: 2,50 m.</small>
-                            <button class="primary" type="submit">
-                                Calcular materiais ↗
-                            </button>
-                        </div>
-                    </form>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Percorre — Planeje sua reforma</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer></script>
+</head>
+<body>
+    <header>
+        <a class="brand" href="index.html">▰ percorre<span>.</span></a>
+        <small>MENOS DESPERDÍCIO. MAIS CLAREZA.</small>
+    </header>
+    <main>
+        <section class="intro">
+            <span class="eyebrow">UM PRIMEIRO PASSO PARA SUA OBRA</span>
+            <h1>Pequena reforma.<br><em>Grandes planos.</em></h1>
+            <p>Descubra quanto material você pode precisar, organize suas compras e converse com profissionais com mais confiança.</p>
+            <span class="badge">✓ Simples de usar, mesmo sem entender de obras.</span>
+        </section>
+        <section class="workspace" aria-label="Calculadora de materiais">
+            <div class="calculator">
+                <h2><span class="step">01</span> O que vamos reformar?</h2>
+                <p class="hint">Escolha um serviço para começar.</p>
+                <div class="tabs" role="group" aria-label="Tipo de serviço">
+                    <button type="button" data-service="pintura" aria-pressed="true">▤ <span>Pintura</span></button>
+                    <button type="button" data-service="piso" aria-pressed="false">▦ <span>Piso</span></button>
+                    <button type="button" data-service="contrapiso" aria-pressed="false">▱ <span>Contrapiso</span></button>
                 </div>
-                <aside>
-                    <span class="eyebrow">SEU PLANEJAMENTO</span>
-                    <h2>
-                        Sua reforma em números
-                    </h2>
-                    <div id="result" role="status" aria-live="polite"></div>
-                </aside>
-            </section>
-            <section class="tips">
-                <article>
-                    <span class="eyebrow">01 / MEÇA</span>
-                    <h3>Uma trena já resolve.</h3>
-                    <p>Meça cada superfície com calma. Para espaços irregulares, divida em retângulos e calcule separadamente.</p>
-                </article>
-                <article>
-                    <span class="eyebrow">02 / PLANEJE</span>
-                    <h3>Deixe uma margem.</h3>
-                    <p>Recortes e aplicação podem gerar perdas. Ajuste a sobra conforme as condições do seu projeto.</p>
-                </article>
-                <article>
-                    <span class="eyebrow">03 / CONVERSE</span>
-                    <h3>Tenha uma referência.</h3>
-                    <p>Use a estimativa para comparar compras e entender o orçamento com o profissional.</p>
-                </article>
-            </section>
-            <p class="notice">
-                <strong>Uma estimativa para começar.</strong>
-                O consumo real depende do produto, da superfície e da execução. Confira a embalagem e valide as condições da obra com um profissional. Diferenças de orçamento, por si só, não indicam cobrança indevida.
-            </p>
-        </main>
-        <footer>
-            <strong>percorre.</strong>
-            <small>Planejar também é construir. · Projeto de TCC</small>
-        </footer>
-    </body>
+                <h2><span class="step">02</span> Conte um pouco do espaço</h2>
+                <p id="help" class="hint"></p>
+                <form id="form" novalidate>
+                    <div id="fields"></div>
+                    <div class="form-footer">
+                        <small>Medidas em metros. Ex.: 2,50 m.</small>
+                        <button class="primary" type="submit">Calcular materiais ↗</button>
+                    </div>
+                </form>
+            </div>
+            <aside>
+                <span class="eyebrow">SEU PLANEJAMENTO</span>
+                <h2>Sua reforma em números</h2>
+                <div id="result" role="status" aria-live="polite"></div>
+            </aside>
+        </section>
+        <section class="tips">
+            <article>
+                <span class="eyebrow">01 / MEÇA</span>
+                <h3>Uma trena já resolve.</h3>
+                <p>Meça cada superfície com calma. Para espaços irregulares, divida em retângulos e calcule separadamente.</p>
+            </article>
+            <article>
+                <span class="eyebrow">02 / PLANEJE</span>
+                <h3>Deixe uma margem.</h3>
+                <p>Recortes e aplicação podem gerar perdas. Ajuste a sobra conforme as condições do seu projeto.</p>
+            </article>
+            <article>
+                <span class="eyebrow">03 / CONVERSE</span>
+                <h3>Tenha uma referência.</h3>
+                <p>Use a estimativa para comparar compras e entender o orçamento com o profissional.</p>
+            </article>
+        </section>
+        <p class="notice"><strong>Uma estimativa para começar.</strong> O consumo real depende do produto, da superfície e da execução. Confira a embalagem e valide as condições da obra com um profissional. Diferenças de orçamento, por si só, não indicam cobrança indevida.</p>
+    </main>
+    <footer>
+        <strong>percorre.</strong>
+        <small>Planejar também é construir. · Projeto de TCC</small>
+    </footer>
+</body>
 </html>
