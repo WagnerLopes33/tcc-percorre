@@ -1,0 +1,348 @@
+/* A identidade visual e os componentes base vêm de style.css. */
+
+/* Navegação da calculadora em página separada. */
+.logo {
+    text-decoration: none;
+}
+
+.quick-navigation a {
+    display: inline-flex;
+    align-items: center;
+    padding: 9px 14px;
+    border-radius: 10px;
+    color: var(--suave);
+    font: 600 14px var(--sans);
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.quick-navigation a:hover {
+    background: var(--fundo);
+    color: var(--floresta);
+}
+
+.quick-navigation a[aria-current="page"] {
+    background: var(--laranja-bg);
+    color: var(--floresta);
+}
+
+#backbar a {
+    display: inline-block;
+    text-decoration: none;
+}
+
+/* Conteúdo e seleção de serviço. */
+.intro {
+    gap: 10px;
+    margin: 0 0 24px;
+}
+
+.intro p {
+    max-width: 680px;
+}
+
+.workspace {
+    grid-template-columns: minmax(0, 1fr) 340px;
+}
+
+.calculator h2 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.step {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--laranja-bg);
+    color: var(--laranja-escuro);
+    font: 700 13px var(--sans);
+}
+
+.hint {
+    margin-top: 8px;
+    color: var(--suave);
+    font-size: 13px;
+}
+
+.tabs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin: 20px 0 28px;
+}
+
+.tabs button {
+    padding: 16px;
+    border: 1px solid var(--linha-forte);
+    border-radius: var(--r);
+    background: var(--papel);
+    color: var(--floresta);
+    font: 26px var(--sans);
+    text-align: left;
+    cursor: pointer;
+}
+
+.tabs button:hover {
+    border-color: var(--laranja);
+}
+
+.tabs button[aria-pressed="true"] {
+    border-color: var(--laranja);
+    background: var(--laranja-bg);
+    box-shadow: 0 0 0 1px var(--laranja);
+}
+
+.tabs span {
+    display: block;
+    margin-top: 8px;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+/* Campos e ajuda contextual. */
+#fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px 20px;
+    margin-top: 22px;
+}
+
+#fields label {
+    min-width: 0;
+    font-size: 13.5px;
+    font-weight: 600;
+}
+
+.label-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 22px;
+}
+
+#fields input {
+    min-width: 0;
+    margin-top: 7px;
+}
+
+#fields small {
+    display: block;
+    margin-top: 7px;
+    color: var(--suave);
+    font-size: 12px;
+    font-weight: 400;
+}
+
+.lamp-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: 1px solid var(--linha-forte);
+    border-radius: 50%;
+    background: var(--fundo);
+    color: var(--suave);
+    font: italic 700 12px Georgia, serif;
+    cursor: pointer;
+}
+
+.lamp-btn:hover {
+    border-color: var(--floresta);
+    background: var(--floresta);
+    color: white;
+}
+
+.lamp-tooltip {
+    position: absolute;
+    z-index: 30;
+    max-width: min(300px, calc(100vw - 32px));
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: var(--floresta);
+    color: #F3EFE8;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, .2);
+    font-size: 13px;
+    line-height: 1.5;
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity .18s, transform .18s;
+}
+
+.lamp-tooltip.open {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.lamp-tooltip b {
+    color: white;
+}
+
+.form-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 28px;
+    padding-top: 20px;
+    border-top: 1px solid var(--linha);
+}
+
+.form-footer small {
+    color: var(--suave);
+    font-size: 12px;
+}
+
+/* Painel de resultado. */
+.workspace aside {
+    min-width: 0;
+}
+
+.workspace aside > .eyebrow {
+    display: block;
+    margin-bottom: 8px;
+}
+
+#result {
+    padding-top: 24px;
+    text-align: center;
+}
+
+.empty-icon {
+    color: var(--laranja-escuro);
+    font-size: 56px;
+}
+
+#result h3 {
+    margin: 12px 0;
+}
+
+#result p {
+    margin-top: 12px;
+    color: var(--suave);
+    font-size: 13px;
+}
+
+#result .eyebrow {
+    font-size: 10px;
+}
+
+.amount {
+    margin: 16px 0 22px;
+    padding: 20px 12px;
+    border-radius: var(--r);
+    background: var(--floresta);
+    color: var(--laranja);
+    font: 600 44px var(--display);
+    font-variant-numeric: tabular-nums;
+}
+
+.amount span {
+    display: block;
+    margin-top: 4px;
+    color: #F3EFE8;
+    font: 14px var(--sans);
+}
+
+#result .row {
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-wrap: nowrap;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--linha);
+    text-align: left;
+    font-size: 13px;
+}
+
+#result .row strong {
+    text-align: right;
+}
+
+.assumption,
+.result-error {
+    text-align: left;
+}
+
+.result-error {
+    color: var(--erro);
+}
+
+.result-error ul {
+    padding-left: 18px;
+    font-size: 13px;
+}
+
+/* Orientações e telas pequenas. */
+.tips {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 24px;
+    margin-top: 24px;
+}
+
+.tips h3 {
+    margin: 10px 0 8px;
+}
+
+.tips p,
+.notice {
+    color: var(--suave);
+    font-size: 13px;
+}
+
+.notice {
+    margin-top: 20px;
+}
+
+@media (max-width: 900px) {
+    .workspace {
+        grid-template-columns: 1fr;
+    }
+
+    .workspace aside.resumo {
+        order: 0;
+    }
+
+    .tips {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 600px) {
+    #fields {
+        grid-template-columns: 1fr;
+    }
+
+    .tabs {
+        gap: 8px;
+    }
+
+    .tabs button {
+        padding: 12px;
+    }
+
+    .tabs span {
+        font-size: 12px;
+    }
+
+    .form-footer {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .quick-navigation a {
+        padding: 8px 10px;
+        font-size: 13px;
+    }
+}
+

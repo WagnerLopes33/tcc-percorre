@@ -1,74 +1,609 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Obrinha — Planeje sua reforma</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Fredoka:wght@600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
-    <script src="script.js" defer></script>
-</head>
-<body>
-    <header>
-        <a class="brand" href="index.html">obrinha<span>.</span></a>
-        <small>MENOS DESPERDÍCIO. MAIS CLAREZA.</small>
-    </header>
-    <main>
-        <section class="intro">
-            <span class="eyebrow">UM PRIMEIRO PASSO PARA SUA OBRA</span>
-            <h1>Pequena reforma.<br><em>Grandes planos.</em></h1>
-            <p>Descubra quanto material você pode precisar, organize suas compras e converse com profissionais com mais confiança.</p>
-            <span class="badge">✓ Simples de usar, mesmo sem entender de obras.</span>
-        </section>
-        <section class="workspace" aria-label="Calculadora de materiais">
-            <div class="calculator">
-                <h2><span class="step">01</span> O que vamos reformar?</h2>
-                <p class="hint">Escolha um serviço para começar.</p>
-                <div class="tabs" role="group" aria-label="Tipo de serviço">
-                    <button type="button" data-service="pintura" aria-pressed="true">▤ <span>Pintura</span></button>
-                    <button type="button" data-service="piso" aria-pressed="false">▦ <span>Piso</span></button>
-                    <button type="button" data-service="contrapiso" aria-pressed="false">▱ <span>Contrapiso</span></button>
-                </div>
-                <h2><span class="step">02</span> Conte um pouco do espaço</h2>
-                <p id="help" class="hint"></p>
-                <form id="form" novalidate>
-                    <div id="fields"></div>
-                    <div class="form-footer">
-                        <small>Medidas em metros. Ex.: 2,50 m.</small>
-                        <button class="primary" type="submit">Calcular materiais ↗</button>
-                    </div>
-                </form>
+<!doctype html>
+<html lang="pt-BR">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <title>Obrinha — Planeje sua reforma</title>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap">
+        <link rel="stylesheet" href="style.css">
+    </head>
+    <body>
+        <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+            <symbol id="dico" viewBox="0 0 600 600">
+                <g stroke="#3A2618" stroke-width="7" stroke-linejoin="round" stroke-linecap="round">
+                    <ellipse cx="445" cy="470" rx="105" ry="52" transform="rotate(-28 445 470)" fill="#6B4429"/>
+                    <ellipse cx="240" cy="545" rx="48" ry="22" fill="#6B4429"/>
+                    <ellipse cx="360" cy="545" rx="48" ry="22" fill="#6B4429"/>
+                    <ellipse cx="300" cy="420" rx="140" ry="130" fill="#8A5A3C"/>
+                    <ellipse cx="300" cy="445" rx="88" ry="92" fill="#E9C9A3"/>
+                    <rect x="166" y="428" width="268" height="34" rx="17" fill="#3DBE6E"/>
+                    <rect x="284" y="424" width="32" height="42" rx="7" fill="#FF7A1A"/>
+                    <rect x="360" y="456" width="46" height="42" rx="11" fill="#FF7A1A"/>
+                    <ellipse cx="165" cy="345" rx="28" ry="52" transform="rotate(-35 165 345)" fill="#8A5A3C"/>
+                    <ellipse cx="432" cy="395" rx="26" ry="48" transform="rotate(28 432 395)" fill="#8A5A3C"/>
+                    <circle cx="196" cy="142" r="32" fill="#8A5A3C"/>
+                    <circle cx="404" cy="142" r="32" fill="#8A5A3C"/>
+                    <circle cx="300" cy="232" r="126" fill="#8A5A3C"/>
+                    <path d="M182 178 Q300 34 418 178 Z" fill="#FF7A1A"/>
+                    <rect x="160" y="166" width="280" height="30" rx="15" fill="#FF7A1A"/>
+                    <ellipse cx="300" cy="290" rx="72" ry="54" fill="#E9C9A3"/>
+                    <ellipse cx="300" cy="262" rx="23" ry="15" fill="#3A2618"/>
+                    <path d="M300 277 V292 M270 296 Q300 316 330 296" fill="none"/>
+                    <rect x="285" y="304" width="30" height="32" rx="6" fill="#FFFCF7"/>
+                </g>
+                <circle cx="254" cy="220" r="17" fill="#3A2618"/>
+                <circle cx="346" cy="220" r="17" fill="#3A2618"/>
+                <circle cx="260" cy="213" r="6" fill="#FFFCF7"/>
+                <circle cx="352" cy="213" r="6" fill="#FFFCF7"/>
+                <ellipse cx="222" cy="268" rx="19" ry="11" fill="#FF9E7A" opacity=".65"/>
+                <ellipse cx="378" cy="268" rx="19" ry="11" fill="#FF9E7A" opacity=".65"/>
+            </symbol>
+            <symbol id="icone" viewBox="0 0 256 256">
+                <rect width="256" height="256" rx="64" fill="#FF7A1A"/>
+                <g stroke="#133A2C" stroke-width="6" stroke-linejoin="round">
+                    <circle cx="80" cy="92" r="18" fill="#8A5A3C"/>
+                    <circle cx="176" cy="92" r="18" fill="#8A5A3C"/>
+                    <circle cx="128" cy="140" r="70" fill="#8A5A3C"/>
+                    <path d="M66 110 Q128 30 190 110 Z" fill="#FFF5EA"/>
+                    <rect x="54" y="102" width="148" height="18" rx="9" fill="#FFF5EA"/>
+                    <ellipse cx="128" cy="172" rx="40" ry="30" fill="#E9C9A3"/>
+                    <ellipse cx="128" cy="157" rx="13" ry="9" fill="#133A2C"/>
+                    <rect x="119" y="178" width="18" height="20" rx="4" fill="#FFFCF7"/>
+                </g>
+                <circle cx="104" cy="136" r="9" fill="#133A2C"/>
+                <circle cx="152" cy="136" r="9" fill="#133A2C"/>
+            </symbol>
+        </svg>
+        <header>
+            <div class="bar">
+                <button class="logo" type="button" data-go="inicio" aria-label="Obrinha, ir para o início">
+                    <svg width="34" height="34" aria-hidden="true">
+                        <use href="#icone"/>
+                    </svg>
+                    <span>obrinha</span>
+                </button>
+                <nav class="top" aria-label="Principal">
+                    <button type="button" data-go="inicio">Início</button>
+                    <button type="button" data-go="obra">Minha obra</button>
+                    <button type="button" data-go="gastos">Meus gastos</button>
+                    <button type="button" data-go="profissionais">Profissionais</button>
+                    <a class="quick-link" href="calculadora.html">Cálculo rápido ↗</a>
+                </nav>
             </div>
-            <aside>
-                <span class="eyebrow">SEU PLANEJAMENTO</span>
-                <h2>Sua reforma em números</h2>
-                <div id="result" role="status" aria-live="polite"></div>
-            </aside>
-        </section>
-        <section class="tips">
-            <article>
-                <span class="eyebrow">01 / MEÇA</span>
-                <h3>Uma trena já resolve.</h3>
-                <p>Meça cada superfície com calma. Para espaços irregulares, divida em retângulos e calcule separadamente.</p>
-            </article>
-            <article>
-                <span class="eyebrow">02 / PLANEJE</span>
-                <h3>Deixe uma margem.</h3>
-                <p>Recortes e aplicação podem gerar perdas. Ajuste a sobra conforme as condições do seu projeto.</p>
-            </article>
-            <article>
-                <span class="eyebrow">03 / CONVERSE</span>
-                <h3>Tenha uma referência.</h3>
-                <p>Use a estimativa para comparar compras e entender o orçamento com o profissional.</p>
-            </article>
-        </section>
-        <p class="notice"><strong>Uma estimativa para começar.</strong> O consumo real depende do produto, da superfície e da execução. Confira a embalagem e valide as condições da obra com um profissional. Diferenças de orçamento, por si só, não indicam cobrança indevida.</p>
-    </main>
-    <footer>
-        <strong>obrinha.</strong>
-        <small>Planejar também é construir. · Projeto de TCC</small>
-    </footer>
-</body>
+        </header>
+        <main id="app" tabindex="-1">
+            <div id="backbar" hidden>
+                <button class="btn-ghost" type="button" id="btn-back">← Voltar</button>
+            </div>
+            <nav id="workflow" aria-label="Passo a passo" hidden>
+                <ol class="wf">
+                </ol>
+            </nav>
+            <!-- INÍCIO -->
+            <section id="v-inicio" class="stack" hidden>
+                <div class="hero">
+                    <div class="stack">
+                        <span class="badge b-or" style="align-self:flex-start">Calculadora de reforma</span>
+                        <h1>Obra sem susto e sem desperdício.</h1>
+                        <p style="max-width:520px">
+                            Diga o que vai reformar e as medidas do cômodo. A Obrinha calcula o material, compara opções com preços ilustrativos e acompanha os seus gastos.
+                        </p>
+                        <div class="row">
+                            <button class="btn btn-primary" type="button" id="btn-nova">Começar uma obra</button>
+                        </div>
+                    </div>
+                    <svg viewBox="0 0 600 600" width="100%" style="max-width:300px;justify-self:center" role="img" aria-label="Dico, o castor da Obrinha">
+                        <use href="#dico"/>
+                    </svg>
+                </div>
+                <div class="card">
+                    <div class="how">
+                        <div>
+                            <span class="n">1</span>
+                            <div>
+                                <p style="font-weight:700">Escolha o cômodo e os serviços</p>
+                                <p class="muted small">Pintura, piso, revestimento, massa e rodapé.</p>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="n">2</span>
+                            <div>
+                                <p style="font-weight:700">Informe as medidas</p>
+                                <p class="muted small">O “i” ao lado de cada campo explica o que medir.</p>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="n">3</span>
+                            <div>
+                                <p style="font-weight:700">Compare e economize</p>
+                                <p class="muted small">Veja as opções que cobrem a obra pelo menor custo.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row between">
+                    <h2>Suas obras</h2>
+                </div>
+                <div id="lista-obras" class="grid">
+                </div>
+            </section>
+            <!-- NOVA OBRA -->
+            <section id="v-novaobra" hidden>
+                <div class="layout">
+                    <form id="f-obra" class="card" novalidate>
+                        <div class="card-head">
+                            <span class="eyebrow">Passo 1 de 7</span>
+                            <h1>Nova obra</h1>
+                            <p class="muted">Dê um nome para organizar seus cômodos e gastos.</p>
+                        </div>
+                        <div class="stack">
+                            <div class="field">
+                                <label class="lbl" for="o-nome" data-info="Como você quer chamar esta reforma, por exemplo “Reforma da casa” ou “Apartamento novo”. Serve só para você se organizar.">
+                                    Nome da obra
+                                </label>
+                                <input id="o-nome" placeholder="Ex.: Reforma da casa" autocomplete="off">
+                                <p class="hint-err" id="e-o-nome" role="alert">
+                                </p>
+                            </div>
+                            <div class="field">
+                                <label class="lbl" for="o-orc" data-info="Quanto você pode gastar no total, somando <b>material e mão de obra</b>. Com ele, a Obrinha avisa quando você chegar a 80% do valor e quando passar do limite.">
+                                    Orçamento total
+                                    <span class="opc">(opcional)</span>
+                                </label>
+                                <div class="inwrap">
+                                    <input id="o-orc" inputmode="decimal" placeholder="5.000,00" style="padding-left:40px">
+                                    <span class="suf" style="left:14px;right:auto">R$</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="actions">
+                            <button class="btn btn-sec" type="button" data-go="inicio">Cancelar</button>
+                            <button class="btn btn-primary" type="button" data-submit>Continuar</button>
+                        </div>
+                    </form>
+                    <aside class="resumo card">
+                        <h3>Como funciona</h3>
+                        <p class="muted small" style="margin-top:8px">
+                            Uma obra pode ter vários cômodos. Para cada um, você escolhe os serviços, informa as medidas e recebe a lista de materiais.
+                        </p>
+                    </aside>
+                </div>
+            </section>
+            <!-- OBRA -->
+            <section id="v-obra" class="stack" hidden>
+            </section>
+            <!-- CÔMODO -->
+            <section id="v-comodo" hidden>
+                <div class="layout">
+                    <div>
+                        <form id="f-c1" class="card" novalidate>
+                            <div class="card-head">
+                                <span class="eyebrow">Passo 2 de 7</span>
+                                <h1>O que você vai reformar?</h1>
+                                <p class="muted">Escolha o cômodo e marque um ou mais serviços.</p>
+                            </div>
+                            <div class="stack">
+                                <div class="group-title">
+                                    Cômodo
+                                    <span class="info-slot" data-info="O tipo de cômodo define quais materiais são indicados. <b>Banheiro, cozinha e lavanderia</b> pedem produtos para área molhada. <b>Varanda, garagem e área externa</b> pedem produtos para área externa.">
+                                    </span>
+                                </div>
+                                <div class="opts" id="opts-comodo" role="radiogroup" aria-label="Tipo de cômodo">
+                                </div>
+                                <div class="fields" id="outro-wrap" hidden>
+                                    <div class="field">
+                                        <label class="lbl" for="c-outro" data-info="Escreva o nome da área que não está na lista, por exemplo <b>Closet</b>, <b>Edícula</b>, <b>Sótão</b> ou <b>Área gourmet</b>.">
+                                            Qual é a área?
+                                        </label>
+                                        <input id="c-outro" placeholder="Ex.: Closet">
+                                    </div>
+                                    <div class="field">
+                                        <label class="lbl" for="c-outro-uso" data-info="Define os materiais indicados. <b>Molhada</b>: tem água, como pia ou chuveiro. <b>Externa</b>: pega sol e chuva.">
+                                            Tipo de área
+                                        </label>
+                                        <select id="c-outro-uso">
+                                            <option value="interno">Interna e seca</option>
+                                            <option value="molhada">Molhada</option>
+                                            <option value="externo">Externa</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="field" style="max-width:420px">
+                                    <label class="lbl" for="c-nome" data-info="Um apelido para encontrar o cômodo depois, por exemplo “Quarto do Theo”. Se deixar em branco, usamos o tipo do cômodo.">
+                                        Nome do cômodo
+                                        <span class="opc">(opcional)</span>
+                                    </label>
+                                    <input id="c-nome" placeholder="Ex.: Quarto do Theo">
+                                </div>
+                                <div class="group-title" style="margin-top:8px">
+                                    Serviços
+                                    <span class="info-slot" data-info="Marque tudo o que vai fazer neste cômodo. Você pode escolher <b>vários serviços</b> ao mesmo tempo: a Obrinha soma os materiais e evita contar a mesma área duas vezes.">
+                                    </span>
+                                </div>
+                                <div class="opts wide" id="opts-serv" role="group" aria-label="Serviços">
+                                </div>
+                                <p class="hint-err" id="e-serv" role="alert">
+                                </p>
+                                <div class="pro-cta">
+                                    <div>
+                                        <p style="font-weight:700">Prefere contratar alguém para fazer?</p>
+                                        <p class="muted small">Veja profissionais cadastrados para os serviços marcados e fale direto pelo telefone ou WhatsApp.</p>
+                                    </div>
+                                    <button class="btn btn-sec" type="button" id="btn-pro-c1">Falar com um profissional</button>
+                                </div>
+                            </div>
+                            <div class="actions">
+                                <button class="btn btn-sec" type="button" data-go="obra">Voltar</button>
+                                <button class="btn btn-primary" type="button" data-submit>Continuar</button>
+                            </div>
+                        </form>
+                        <form id="f-c2" class="card" novalidate hidden>
+                            <div class="card-head">
+                                <span class="eyebrow">Passo 3 de 7</span>
+                                <h1>Medidas do cômodo</h1>
+                                <p class="muted">Use metros. Pode digitar com vírgula, como 2,7.</p>
+                            </div>
+                            <div class="tipbox">
+                                <svg width="52" height="52" aria-hidden="true">
+                                    <use href="#dico"/>
+                                </svg>
+                                <p class="small">
+                                    <b>Dica do Dico:</b>
+                                    meça no chão, de parede a parede. Se o cômodo não for retangular, divida em partes e cadastre cada uma como um cômodo.
+                                </p>
+                            </div>
+                            <div class="fields">
+                                <div class="field">
+                                    <label class="lbl" for="m-larg" data-info="Distância de uma parede até a parede da frente, no <b>lado menor</b> do cômodo. Meça no chão, rente ao rodapé.">
+                                        Largura
+                                    </label>
+                                    <div class="inwrap">
+                                        <input id="m-larg" inputmode="decimal" placeholder="3,00">
+                                        <span class="suf">m</span>
+                                    </div>
+                                </div>
+                                <div class="field">
+                                    <label class="lbl" for="m-comp" data-info="Distância entre as outras duas paredes, no <b>lado maior</b> do cômodo.">Comprimento</label>
+                                    <div class="inwrap">
+                                        <input id="m-comp" inputmode="decimal" placeholder="4,00">
+                                        <span class="suf">m</span>
+                                    </div>
+                                </div>
+                                <div class="field">
+                                    <label class="lbl" for="m-alt" data-info="Do chão até o teto. A maioria das casas tem entre <b>2,50 m e 2,80 m</b>.">Altura do pé-direito</label>
+                                    <div class="inwrap">
+                                        <input id="m-alt" inputmode="decimal" placeholder="2,70">
+                                        <span class="suf">m</span>
+                                    </div>
+                                </div>
+                                <div class="field">
+                                    <label class="lbl" for="m-portas" data-info="Quantas portas o cômodo tem. A área delas é descontada das paredes, porque não recebe tinta nem azulejo, e do rodapé.">
+                                        Portas
+                                    </label>
+                                    <input id="m-portas" type="number" min="0" max="10" value="1">
+                                </div>
+                                <div class="field">
+                                    <label class="lbl" for="m-janelas" data-info="Quantas janelas o cômodo tem. A área delas também é descontada das paredes.">Janelas</label>
+                                    <input id="m-janelas" type="number" min="0" max="10" value="1">
+                                </div>
+                                <div class="field">
+                                    <label class="lbl" for="m-porta-a" data-info="Área de cada porta. O padrão é <b>0,80 m × 2,10 m = 1,68 m²</b>. Mude só se as suas portas forem diferentes.">
+                                        Área de cada porta
+                                    </label>
+                                    <div class="inwrap">
+                                        <input id="m-porta-a" inputmode="decimal" value="1,68">
+                                        <span class="suf">m²</span>
+                                    </div>
+                                </div>
+                                <div class="field">
+                                    <label class="lbl" for="m-janela-a" data-info="Área de cada janela. O padrão é <b>1,20 m × 1,00 m = 1,20 m²</b>. Multiplique a largura pela altura da sua janela.">
+                                        Área de cada janela
+                                    </label>
+                                    <div class="inwrap">
+                                        <input id="m-janela-a" inputmode="decimal" value="1,20">
+                                        <span class="suf">m²</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="hint-err" id="e-medidas" role="alert" style="margin-top:12px">
+                            </p>
+                            <div class="actions">
+                                <button class="btn btn-sec" type="button" id="c2-voltar">Voltar</button>
+                                <button class="btn btn-primary" type="button" data-submit>Continuar</button>
+                            </div>
+                        </form>
+                        <form id="f-c3" class="card" novalidate hidden>
+                            <div class="card-head">
+                                <span class="eyebrow">Passo 4 de 7</span>
+                                <h1>Detalhes dos serviços</h1>
+                                <p class="muted">Já preenchemos valores comuns. Ajuste com o que está na embalagem, se tiver.</p>
+                            </div>
+                            <div class="stack">
+                                <div id="d-pintura" class="subsec">
+                                    <div class="sec-title">
+                                        <span class="ic">
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                <rect x="3" y="3" width="15" height="6" rx="2"/>
+                                                <path d="M18 6h2v5h-8v3"/>
+                                                <rect x="10" y="14" width="4" height="7" rx="1"/>
+                                            </svg>
+                                        </span>
+                                        <h2>Pintura</h2>
+                                    </div>
+                                    <div class="fields">
+                                        <div class="field">
+                                            <label class="lbl" for="d-demaos" data-info="Quantas camadas de tinta serão passadas. <b>2 demãos</b> é o comum. Use <b>3</b> quando a cor nova for muito diferente da atual, como de escuro para claro.">
+                                                Demãos
+                                            </label>
+                                            <select id="d-demaos">
+                                                <option value="2">2 demãos</option>
+                                                <option value="3">3 demãos</option>
+                                            </select>
+                                        </div>
+                                        <div class="field">
+                                            <label class="lbl" for="d-acab" data-info="O acabamento muda o brilho. <b>Fosco</b> disfarça imperfeições; <b>acetinado</b> e <b>semibrilho</b> são mais fáceis de limpar, bons para cozinha e quarto de criança.">
+                                                Acabamento
+                                            </label>
+                                            <select id="d-acab">
+                                                <option>Fosco</option>
+                                                <option>Acetinado</option>
+                                                <option>Semibrilho</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="stack" style="margin-top:14px;gap:10px">
+                                        <label class="toggle">
+                                            <input type="checkbox" id="d-cor">
+                                            <span>
+                                                <span class="t">A cor nova é muito diferente da atual</span>
+                                                <br>
+                                                <span class="muted small">Muda para 3 demãos.</span>
+                                            </span>
+                                        </label>
+                                        <label class="toggle">
+                                            <input type="checkbox" id="d-nova">
+                                            <span>
+                                                <span class="t">Parede nova ou nunca pintada</span>
+                                                <br>
+                                                <span class="muted small">Inclui selador, que fecha os poros e faz a tinta render mais.</span>
+                                            </span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div id="d-massa" class="subsec">
+                                    <div class="sec-title">
+                                        <span class="ic">
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                <path d="M4 20l6-6M14 4l6 6-8 8-6-6z"/>
+                                            </svg>
+                                        </span>
+                                        <h2>Massa corrida</h2>
+                                    </div>
+                                    <div class="fields">
+                                        <div class="field">
+                                            <label class="lbl" for="d-massa-dem" data-info="A massa corrida nivela a parede antes da pintura. <b>2 demãos</b> resolvem a maioria das paredes; use <b>1</b> se a parede só tiver pequenas falhas.">
+                                                Demãos de massa
+                                            </label>
+                                            <select id="d-massa-dem">
+                                                <option value="2">2 demãos</option>
+                                                <option value="1">1 demão</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="d-piso" class="subsec">
+                                    <div class="sec-title">
+                                        <span class="ic">
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                <rect x="3" y="3" width="18" height="18" rx="3"/>
+                                                <path d="M3 12h18M12 3v18"/>
+                                            </svg>
+                                        </span>
+                                        <h2>Piso</h2>
+                                    </div>
+                                    <div class="fields">
+                                        <div class="field">
+                                            <label class="lbl" for="d-peca" data-info="Tamanho de cada peça do piso. Ele muda a quantidade de <b>rejunte</b>: peças menores têm mais juntas.">
+                                                Tamanho da peça
+                                            </label>
+                                            <select id="d-peca">
+                                                <option value="600x600">60 × 60 cm</option>
+                                                <option value="450x450">45 × 45 cm</option>
+                                                <option value="600x1200">60 × 120 cm</option>
+                                                <option value="200x1200">20 × 120 cm (amadeirado)</option>
+                                                <option value="300x300">30 × 30 cm</option>
+                                            </select>
+                                        </div>
+                                        <div class="field">
+                                            <label class="lbl" for="d-m2" data-info="Quantos metros quadrados vêm em cada caixa. A informação está <b>impressa na caixa</b> do piso.">m² por caixa</label>
+                                            <div class="inwrap">
+                                                <input id="d-m2" inputmode="decimal" value="2,50">
+                                                <span class="suf">m²</span>
+                                            </div>
+                                        </div>
+                                        <div class="field">
+                                            <label class="lbl" for="d-assent" data-info="Como as peças serão colocadas. <b>Reto</b> soma 10% de perda com recortes. <b>Diagonal</b> corta mais peças e soma 15%.">
+                                                Assentamento
+                                            </label>
+                                            <select id="d-assent">
+                                                <option value="reto">Reto (+10%)</option>
+                                                <option value="diagonal">Diagonal (+15%)</option>
+                                            </select>
+                                        </div>
+                                        <div class="field">
+                                            <label class="lbl" for="d-junta" data-info="O espaço entre uma peça e outra, que é preenchido com rejunte. Peças retificadas usam <b>1 a 2 mm</b>; peças comuns, <b>3 a 5 mm</b>.">
+                                                Junta
+                                            </label>
+                                            <div class="inwrap">
+                                                <input id="d-junta" inputmode="decimal" data-dec="1" value="2,0">
+                                                <span class="suf">mm</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="d-revest" class="subsec">
+                                    <div class="sec-title">
+                                        <span class="ic">
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                                                <path d="M3 9h18M3 15h18M9 3v18M15 3v18"/>
+                                            </svg>
+                                        </span>
+                                        <h2>Revestimento de parede</h2>
+                                    </div>
+                                    <div class="fields">
+                                        <div class="field">
+                                            <label class="lbl" for="r-alt" data-info="Até que altura o azulejo vai na parede. Em banheiros é comum ir até o teto; em cozinhas, até <b>1,50 m</b> ou só na faixa da pia.">
+                                                Altura do revestimento
+                                            </label>
+                                            <div class="inwrap">
+                                                <input id="r-alt" inputmode="decimal" value="1,50">
+                                                <span class="suf">m</span>
+                                            </div>
+                                        </div>
+                                        <div class="field">
+                                            <label class="lbl" for="r-peca" data-info="Tamanho de cada peça de revestimento. Ele muda a quantidade de rejunte.">Tamanho da peça</label>
+                                            <select id="r-peca">
+                                                <option value="300x600">30 × 60 cm</option>
+                                                <option value="330x450">33 × 45 cm</option>
+                                                <option value="200x200">20 × 20 cm</option>
+                                                <option value="100x100">10 × 10 cm (pastilha)</option>
+                                            </select>
+                                        </div>
+                                        <div class="field">
+                                            <label class="lbl" for="r-m2" data-info="Quantos metros quadrados vêm em cada caixa. Está <b>impresso na caixa</b>.">m² por caixa</label>
+                                            <div class="inwrap">
+                                                <input id="r-m2" inputmode="decimal" value="2,00">
+                                                <span class="suf">m²</span>
+                                            </div>
+                                        </div>
+                                        <div class="field">
+                                            <label class="lbl" for="r-junta" data-info="Espaço entre as peças, preenchido com rejunte. Revestimentos costumam usar <b>2 a 3 mm</b>.">Junta</label>
+                                            <div class="inwrap">
+                                                <input id="r-junta" inputmode="decimal" data-dec="1" value="2,0">
+                                                <span class="suf">mm</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="d-rodape" class="subsec">
+                                    <div class="sec-title">
+                                        <span class="ic">
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                <path d="M3 20h18M3 16h18M3 16v4M21 16v4"/>
+                                            </svg>
+                                        </span>
+                                        <h2>Rodapé</h2>
+                                    </div>
+                                    <div class="fields">
+                                        <div class="field">
+                                            <label class="lbl" for="d-barra" data-info="Comprimento de cada barra de rodapé vendida. O mais comum é <b>2,40 m</b>. Descontamos a largura das portas e somamos 10% para os cortes.">
+                                                Comprimento da barra
+                                            </label>
+                                            <div class="inwrap">
+                                                <input id="d-barra" inputmode="decimal" value="2,40">
+                                                <span class="suf">m</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="hint-err" id="e-det" role="alert" style="margin-top:12px">
+                            </p>
+                            <div class="actions">
+                                <button class="btn btn-sec" type="button" id="c3-voltar">Voltar</button>
+                                <button class="btn btn-primary" type="button" data-submit>Calcular materiais</button>
+                            </div>
+                        </form>
+                    </div>
+                    <aside class="resumo card" id="resumo-comodo">
+                    </aside>
+                </div>
+            </section>
+            <section id="v-resultado" class="stack" hidden>
+            </section>
+            <section id="v-gastos" class="stack" hidden>
+            </section>
+            <section id="v-profissionais" class="stack" hidden>
+                <div>
+                    <span class="eyebrow">Rede de profissionais</span>
+                    <h1>Profissionais</h1>
+                    <p class="muted">Cadastre pintores, pedreiros e outros profissionais para encontrar e falar com eles na hora de executar a obra.</p>
+                </div>
+                <div class="layout">
+                    <div class="card">
+                        <div class="row between" style="margin-bottom:16px">
+                            <h2>Cadastrados</h2>
+                            <label class="lbl" for="pf-filtro" style="gap:8px">
+                                Serviço
+                                <select id="pf-filtro" style="min-height:40px;width:auto">
+                                </select>
+                            </label>
+                        </div>
+                        <div id="pro-lista" class="pros">
+                        </div>
+                    </div>
+                    <form id="f-pro" class="card" novalidate>
+                        <div class="card-head">
+                            <h2>Cadastrar profissional</h2>
+                            <p class="muted small">Campos com * são obrigatórios.</p>
+                        </div>
+                        <div class="stack">
+                            <div class="field">
+                                <label class="lbl" for="p-nome" data-info="Nome ou apelido pelo qual o profissional é conhecido.">Nome *</label>
+                                <input id="p-nome" placeholder="Ex.: João Pintor" autocomplete="off">
+                            </div>
+                            <div class="field">
+                                <label class="lbl" for="p-tel" data-info="Celular ou telefone <b>com DDD</b>. É por ele que as pessoas vão entrar em contato, inclusive pelo WhatsApp.">
+                                    Telefone com DDD *
+                                </label>
+                                <input id="p-tel" inputmode="tel" placeholder="(11) 98765-4321" maxlength="15" autocomplete="off">
+                            </div>
+                            <fieldset style="border:0;padding:0;margin:0" class="field">
+                                <legend class="lbl" style="margin-bottom:8px" data-info="Marque todos os serviços que o profissional faz. Ele aparece quando alguém escolhe um desses serviços.">
+                                    Serviços que presta *
+                                </legend>
+                                <div class="chips" id="p-servs">
+                                </div>
+                            </fieldset>
+                            <div class="field">
+                                <label class="lbl" for="p-regiao" data-info="Bairro ou cidade onde o profissional atende.">
+                                    Região de atendimento
+                                    <span class="opc">(opcional)</span>
+                                </label>
+                                <input id="p-regiao" placeholder="Ex.: Zona Leste, São Paulo">
+                            </div>
+                            <div class="field">
+                                <label class="lbl" for="p-obs" data-info="Algo útil para quem vai contratar, como experiência ou disponibilidade.">
+                                    Observação
+                                    <span class="opc">(opcional)</span>
+                                </label>
+                                <input id="p-obs" placeholder="Ex.: Atende aos sábados">
+                            </div>
+                            <p class="hint-err" id="e-pro" role="alert">
+                            </p>
+                        </div>
+                        <div class="actions">
+                            <span>
+                            </span>
+                            <button class="btn btn-primary" type="button" data-submit>Cadastrar profissional</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+        </main>
+        <footer>
+            Projeto de TCC. Cálculos e preços são estimativas de exemplo e não substituem a embalagem do produto nem a orientação de um profissional. Seus dados ficam salvos só neste navegador.
+        </footer>
+        <dialog id="dlg">
+            <div class="stack" id="dlg-body">
+            </div>
+        </dialog>
+        <div class="toast" id="toast" role="status" hidden>
+        </div>
+        <script src="dados.js" defer>
+        </script>
+        <script src="script.js" defer>
+        </script>
+    </body>
 </html>
