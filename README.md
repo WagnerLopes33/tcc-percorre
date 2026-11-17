@@ -1,5 +1,40 @@
 # Obrinha
 
+## Pesquisa de preços — integração experimental
+
+O menu **Pesquisar preços** e os links na tela de resultado abrem `precos.html`.
+O backend usa a [SerpApi / Google Shopping](https://serpapi.com/shopping-results), um serviço externo que exige conta e chave para consultas reais. Confira as condições e a cota do seu plano.
+
+### Executar
+
+1. Instale Node.js (mínimo compatível: 18.18; recomendado: versão LTS atual). O servidor carrega `.env` diretamente, sem exigir opções especiais do Node.
+2. No terminal da pasta do projeto, execute `npm start`.
+3. Abra `http://localhost:3000` e clique em **Pesquisar preços**.
+
+Sem chave, a pesquisa retorna três ofertas **fictícias**, identificadas como demonstração. Para ativar a consulta real:
+
+1. Copie `.env.example` para `.env`.
+2. Preencha `SERPAPI_API_KEY` com sua chave. Não coloque a chave nos arquivos HTML ou JavaScript do navegador.
+3. Reinicie `npm start`.
+
+Não é necessário instalar dependências npm. `.env` está ignorado pelo Git e não é servido pelo backend. O servidor atende somente no próprio computador (`127.0.0.1`).
+
+### Escopo deste teste
+
+- Busca de anúncios no Brasil por descrição, marca e embalagem, com preço, loja, link e data da consulta. Os links podem abrir páginas de produto no Google Shopping.
+- Cache em memória por 30 minutos, limite de 100 pesquisas armazenadas e intervalo mínimo de 3 segundos entre novas consultas. Reiniciar o servidor limpa o cache.
+- Ordenação pelo preço anunciado e destaque do menor, do maior e da oferta central da amostra. Em amostras pares, destaca a oferta central inferior. Isso não classifica a qualidade dos produtos.
+- Quantidade inteira de embalagens informada pelo usuário para calcular o subtotal sem frete.
+- Não há confirmação automática de equivalência, estoque, entrega por CEP, unidade do preço ou rendimento. Confira o anúncio antes de usar o valor: há lojas que anunciam por m², unidade ou caixa.
+- A pesquisa não modifica o orçamento salvo. Os cálculos existentes continuam com o catálogo ilustrativo; a integração automática depende de validar a correspondência entre material, embalagem e anúncio.
+- Falhas da API são exibidas como erro; não são substituídas por preços fictícios.
+
+### Verificação
+
+Execute `npm test` para verificar normalização de ofertas, proteção de arquivos, demonstração, cache e integração com fornecedor simulado. Para conferir a interface, teste uma pesquisa, altere a quantidade e abra um anúncio. Uma consulta real exige a chave configurada.
+
+Os testes podem ser executados com `npm.cmd test` no PowerShell.
+
 Aplicação de TCC para planejar pequenas reformas, estimar materiais e acompanhar gastos.
 
 ## Como abrir
