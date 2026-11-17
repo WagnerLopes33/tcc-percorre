@@ -650,8 +650,10 @@ function renderResultado() {
  <p style="font-weight:700;margin-top:6px">${esc(op.nome)}</p><p class="muted small">${op.texto}</p><p class="price num">${brl(op.custo)}</p>
  ${op.id!==i.sel&&op.custo<cur?`<p class="small" style="color:var(--verde-ok);font-weight:700">Economiza ${brl(cur-op.custo)}</p>`:op.id!==i.sel?`<p class="small muted">${brl(op.custo-cur)} a mais</p>`:`<p class="small muted">&nbsp;</p>`}
  <div class="row" style="justify-content:space-between;margin-top:4px">${op.id!==i.sel?`<button class="btn btn-sec" style="min-height:40px;padding:0 14px" type="button" data-usar="${i.cat}|${op.id}">Usar esta</button>`:"<span></span>"}<a class="btn-ghost" href="https://www.google.com/search?tbm=shop&q=${encodeURIComponent(op.nome+" "+op.linha)}" target="_blank" rel="noopener">Ver nas lojas ↗</a></div></div>`).join("")}</div></div>`}).join("")}</div></div>`;
-    const prosR = prosPara(c.servicos).slice(0, 3);
-    const proCard = `<div class="card"><div class="row between" style="margin-bottom:14px"><div><h2>Precisa de alguém para executar?</h2><p class="muted small">Profissionais cadastrados para ${c.servicos.map(s=>SERVNOME[s].toLowerCase()).join(", ")}.</p></div><button class="btn btn-sec" type="button" data-go="profissionais">Ver todos</button></div>${prosR.length?`<div class="pros">${prosR.map(proHTML).join("")}</div>`:`<p class="muted">Nenhum profissional cadastrado para estes serviços. <button class="btn-ghost" type="button" data-go="profissionais">Cadastrar profissional</button></p>`}</div>`;
+    const pedidoComodo = montarPedidoProfissionais({ servicos: c.servicos.map(s => (typeof MAPA_SERVICO_COMODO!=="undefined"&&MAPA_SERVICO_COMODO[s]) || s), descricao: c.nome + " - " + c.servicos.map(s=>SERVNOME[s]).join(", "), ambiente: nomeTipo(c), regiao: "", comodoId: c.id, obraId: o.id });
+    const recComodo = recomendarProfissionais(pedidoComodo);
+    const topComodo = recComodo.resultados.slice(0,3);
+    const proCard = `<div class="card"><div class="row between" style="margin-bottom:14px"><div><h2>Profissionais recomendados para sua obra</h2><p class="muted small">Sugestões baseadas nas informações cadastradas para ${esc(c.servicos.map(s=>SERVNOME[s]).join(", "))}. Confirme qualificações e disponibilidade antes de contratar.</p></div><div class="row"><button class="btn btn-sec" type="button" id="b-ver-reco-pro">Ver recomendações completas</button><button class="btn-ghost" type="button" data-go="profissionais">Abrir profissionais</button></div></div>${topComodo.length?renderRecoCardsCompactos(topComodo,pedidoComodo):`<div class="warn-box">Ainda não há profissionais compatíveis cadastrados para esta necessidade. Você pode cadastrar profissionais ou usar "Pensando em algo mais?" para organizar sua solicitação.</div>`}</div>`;
     el.innerHTML = `${sug?opc:lista}${kpi}<div class="card"><h2>Consultar preços na internet</h2><p class="muted">Pesquise anúncios e confira embalagem, rendimento e frete antes da compra. O orçamento acima usa preços ilustrativos.</p><div class="row">${R.itens.map(i=>`<a class="btn btn-sec" href="precos.html?q=${encodeURIComponent(NOMEMAT[i.cat])}" target="_blank" rel="noopener">Pesquisar ${esc(NOMEMAT[i.cat])} ↗</a>`).join('')}</div></div>${proCard}
  <div class="actions" style="border:0;margin-top:0;padding-top:0">${sug?`<button class="btn btn-sec" type="button" id="b-volta">Voltar ao resultado</button><button class="btn btn-primary" type="button" id="b-salvar">Próximo: salvar no orçamento</button>`:`<div class="row"><button class="btn btn-sec" type="button" id="b-editar">Editar medidas</button><button class="btn-ghost" type="button" id="b-concluir">${c.concluido?"✓ Cômodo concluído":"Concluir este cômodo"}</button></div><button class="btn btn-primary" type="button" id="b-sug">Próximo: ver opções mais baratas</button>`}</div>`;
     el.querySelectorAll("[data-usar]").forEach(b => b.onclick =() => {
@@ -688,6 +690,7 @@ function renderResultado() {
         etapa(2)
     });
     on("#b-concluir", () => concluir(c));
+    on("#b-ver-reco-pro", () => { atual.pedidoContext = { ...pedidoComodo, descricao: (pedidoComodo.descricao||"") }; go("profissionais"); });
 }
 /* ================= GASTOS ================= */
 const gasto = o => o.compras.reduce((s, x) => s + x.valor, 0) + o.comodos.reduce((s, c) => s + Object.values(c.pagos || {
@@ -795,76 +798,456 @@ function exportar(o) {
     toast("Resumo baixado.");
 }
 /* ================= PROFISSIONAIS ================= */
-const telDig = t => t.replace(/\D/g, "");
-function prosPara(servs) {
-    const alvo = new Set(servs.map(s => SERV2PRO [s] || s));
-    return(mem.pros || []).filter(p => ! alvo.size || p.servicos.some(x => alvo.has(x)))
+const telDig = t => String(t || "").replace(/\D/g, "");
+function servicoBuscaNome(id){ const f = (typeof SERVICOS_BUSCA !== "undefined" ? SERVICOS_BUSCA : []).find(x => x[0] === id); return f ? f[1] : id; }
+function espNome(id){ return (typeof ESPECIALIDADES !== "undefined" && ESPECIALIDADES[id] && ESPECIALIDADES[id].nome) || id || "Não informada"; }
+function waLink(tel, texto){ const d = telDig(tel); return d ? ("https://wa.me/55" + d + "?text=" + encodeURIComponent(texto || "Olá! Vi seu contato na Obrinha e gostaria de conversar sobre um serviço.")) : ""; }
+function copiarTexto(t, okMsg){ (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast(okMsg || "Copiado."), () => toast("Não foi possível copiar automaticamente.")); }
+function pedidoDeServicosComodo(servs){ return (servs || []).map(x => (typeof MAPA_SERVICO_COMODO !== "undefined" && MAPA_SERVICO_COMODO[x]) || x); }
+function prosPara(servs){
+  if (typeof montarPedidoProfissionais !== "function" || typeof recomendarProfissionais !== "function") {
+    const alvo = new Set((servs || []).map(x => (typeof SERV2PRO !== "undefined" && SERV2PRO[x]) || x));
+    return (mem.pros || []).filter(p => !alvo.size || (p.servicos || []).some(x => alvo.has(x)));
+  }
+  const pedido = montarPedidoProfissionais({ servicos: pedidoDeServicosComodo(servs) });
+  return recomendarProfissionais(pedido).resultados.map(r => r.pro);
 }
-function proHTML(p) {
-    const d = telDig(p.tel);
-    return `<div class="pro"><div class="row" style="gap:10px;flex-wrap:nowrap"><span class="av">${esc(p.nome.trim()[0]||"?").toUpperCase()}</span><div style="min-width:0"><p style="font-weight:700">${esc(p.nome)}${p.exemplo?` <span class="badge b-neu">Exemplo</span>`:""}</p>${p.regiao?`<p class="muted small">${esc(p.regiao)}</p>`:""}</div></div>
- <p class="tel">${esc(p.tel)}</p><div class="chips">${p.servicos.map(x=>`<span class="badge b-or">${PRO_SERV.find(y=>y[0]===x)[1]}</span>`).join("")}</div>${p.obs?`<p class="muted small">${esc(p.obs)}</p>`:""}
- <div class="row" style="gap:8px">${p.exemplo ? `<span class="muted small">Contato fictício para demonstração.</span>` : `<a class="btn btn-primary" style="min-height:40px;padding:0 14px" href="https://wa.me/55${d}?text=${encodeURIComponent("Olá! Vi seu contato na Obrinha e gostaria de um orçamento.")}" target="_blank" rel="noopener">WhatsApp</a><button class="btn btn-sec" style="min-height:40px;padding:0 14px" type="button" data-copiar="${esc(p.tel)}">Copiar telefone</button>`}</div></div>`
+
+function resumoSolicitacaoTexto(sol){
+  const ped = sol.pedido || {}; const f = sol.ficha || {};
+  return [
+    "Obrinha - Solicitação de atendimento",
+    "Criada em: " + new Date(sol.criadoEm || Date.now()).toLocaleString("pt-BR"),
+    "Status: " + (sol.status || "em andamento"),
+    "",
+    "Resumo: " + (f.resumo || ped.descricao || "Não informado"),
+    "Ambiente: " + (f.ambiente || ped.ambiente || "Não informado"),
+    "Região: " + (f.regiao || ped.regiao || "Não informada"),
+    "Serviços/necessidades identificadas: " + ((f.servicos || ped.servicos || []).map(servicoBuscaNome).join(", ") || "A identificar"),
+    "Especialidades possivelmente necessárias: " + ((f.especialidades || ped.especialidadesNecessarias || []).map(espNome).join(", ") || "A identificar"),
+    "Habilidades necessárias: " + ((f.habilidades || ped.habilidadesNecessarias || []).join(", ") || "A identificar"),
+    "Informações complementares: " + (f.complementares || "Não informadas"),
+    "Dúvidas a esclarecer: " + (f.duvidas || "Confirmar escopo, medidas, materiais e responsabilidades com o profissional."),
+    "",
+    "Observação: necessidades apresentadas como possibilidades identificadas, não como diagnóstico técnico definitivo. Recomendações são sugestões baseadas nas informações cadastradas."
+  ].join("\n");
 }
-document.addEventListener("click", e => {
-    const b = e.target.closest("[data-copiar]");
-    if (! b) return;
-    const t = b.dataset.copiar;
-    (navigator.clipboard ? navigator.clipboard.writeText(t): Promise.reject()).then(() => toast("Telefone copiado."), () => toast("Telefone: " + t))
-});
-$("#p-servs").innerHTML = PRO_SERV.map(([v, t]) => `<label class="chk"><input type="checkbox" name="pserv" value="${v}"><span>${t}</span></label>`).join("");
-$("#pf-filtro").innerHTML = `<option value="">Todos</option>` + PRO_SERV.map(([v, t]) => `<option value="${v}">${t}</option>`).join("");
-$("#pf-filtro").onchange = renderPros;
-function renderPros() {
-    const f = $("#pf-filtro").value, l =(mem.pros || []).filter(p => ! f || p.servicos.includes(f));
-    $("#pro-lista").innerHTML = l.length ? l.map(p => proHTML(p).replace('</div></div>`', "") + "").join(""): `<div class="empty" style="grid-column:1/-1"><svg width="90" height="90" aria-hidden="true"><use href="#dico"/></svg><p class="muted">Nenhum profissional ${f?"para este serviço":"cadastrado"} ainda. Use o formulário ao lado.</p></div>`;
-    $("#pro-lista").querySelectorAll(".pro").forEach((el, i) => {
-        const p = l [i];
-        el.insertAdjacentHTML("beforeend", `<button class="btn-ghost" type="button" style="align-self:flex-start">Excluir</button>`);
-        el.lastElementChild.onclick =() => confirmar(`Excluir ${esc(p.nome)}?`, "O profissional sai da lista e deixa de aparecer nas sugestões.", "Excluir", () => {
-            mem.pros = mem.pros.filter(x => x !== p);
-            save();
-            renderPros();
-            toast("Profissional excluído.")
-        })
-    })
+
+function cardAcoesContato(pro, pedido){
+  const msg = "Olá! Vi seu contato na Obrinha e gostaria de conversar sobre: " + ((pedido && pedido.descricao) || "um serviço de reforma") + ".";
+  if (pro.exemplo) return '<span class="muted small">Contato fictício para demonstração.</span>';
+  return '<div class="row" style="gap:8px"><a class="btn btn-primary" style="min-height:40px;padding:0 14px" href="' + waLink(pro.tel, msg) + '" target="_blank" rel="noopener">Conversar pelo WhatsApp</a><button class="btn btn-sec" style="min-height:40px;padding:0 14px" type="button" data-copiar="' + esc(pro.tel || "") + '">Copiar contato</button></div>';
 }
-onSubmit("#f-pro", () => {
-    const nome = $("#p-nome").value.trim(), tel = $("#p-tel").value.trim(), d = telDig(tel), servs = [...document.querySelectorAll("input[name=pserv]:checked")].map(i => i.value);
-    const erro =(m, el) => {
-        $("#e-pro").textContent = m;
-        if (el) {
-            el.setAttribute("aria-invalid", "true");
-            el.focus()
-        }
-    };
-    ["#p-nome", "#p-tel"].forEach(x => $(x).removeAttribute("aria-invalid"));
-    if (! nome) return erro("Digite o nome do profissional.", $("#p-nome"));
-    if (d.length < 10 || d.length > 11) return erro("Digite o telefone com DDD, por exemplo (11) 98765-4321.", $("#p-tel"));
-    if ((mem.pros || []).some(p => telDig(p.tel) === d)) return erro("Este telefone já está cadastrado.", $("#p-tel"));
-    if (! servs.length) return erro("Marque pelo menos um serviço que o profissional presta.");
-    $("#e-pro").textContent = "";
-    mem.pros = mem.pros || [];
-    mem.pros.unshift( {
-        id: uid("pro"), nome, tel, servicos: servs, regiao: $("#p-regiao").value.trim(), obs: $("#p-obs").value.trim()
-    });
-    save();
-    $("#f-pro").reset();
-    renderPros();
-    toast("Profissional cadastrado.")
-});
-$("#btn-pro-c1").onclick =() => {
-    const servs = [...document.querySelectorAll("input[name=serv]:checked")].map(i => i.value), l = prosPara(servs);
-    dialogo(`<h2>Falar com um profissional</h2><p class="muted small">${servs.length?"Profissionais para os serviços marcados.":"Marque serviços para filtrar. Mostrando todos."}</p>
- ${l.length?`<div class="stack" style="gap:10px;max-height:55vh;overflow:auto">${l.map(proHTML).join("")}</div>`:`<p class="muted">Ainda não há profissionais para estes serviços.</p>`}
- <div class="row" style="justify-content:flex-end"><button class="btn btn-sec" type="button" id="dlg-cancel">Fechar</button><button class="btn btn-primary" type="button" id="dlg-ok">Cadastrar profissional</button></div>`);
-    $("#dlg-cancel").onclick =() => $("#dlg").close();
-    $("#dlg-ok").onclick =() => {
-        $("#dlg").close();
-        go("profissionais");
-        $("#p-nome").focus()
+
+function renderProCardDetalhado(item, pedido){
+  const pro = item.pro || {}; const r = item || {};
+  const grupoCls = r.grupo === "alta" ? "score-alta" : r.grupo === "parcial" ? "score-parcial" : "score-confirmar";
+  const grupoNome = r.grupo === "alta" ? "Alta compatibilidade" : r.grupo === "parcial" ? "Compatibilidade parcial" : "Compatibilidade a confirmar";
+  const habsRel = (r.matchedHabs || []).slice(0, 6);
+  const motivos = (r.motivos || []).slice(0, 5);
+  const faltas = (r.faltasConfirmar || []).slice(0, 4);
+  const perfilId = "perfil-" + (pro.id || uid("p"));
+  const msgShare = resumoSolicitacaoTexto({ pedido: pedido || { descricao: "" }, ficha: { resumo: (pedido && pedido.descricao) || "", servicos: (pedido && pedido.servicos) || [], especialidades: (pedido && pedido.especialidadesNecessarias) || [], habilidades: (pedido && pedido.habilidadesNecessarias) || [], regiao: (pedido && pedido.regiao) || "", complementares: "", duvidas: "Confirmar escopo e responsabilidades com o profissional." }, criadoEm: new Date().toISOString(), status: "rascunho" });
+  return '<div class="pro-card">' +
+    '<div class="head"><div><p style="font-weight:700;font-size:16px">' + esc(pro.nome || "") + (pro.exemplo ? ' <span class="badge b-neu">Exemplo</span>' : "") + '</p><p class="muted small">' + esc(espNome(pro.especialidade)) + (pro.regiao ? " · " + esc(pro.regiao) : "") + '</p></div><span class="score-pill ' + grupoCls + '">' + (r.score != null ? r.score : 0) + '% · ' + grupoNome + '</span></div>' +
+    (habsRel.length ? '<div class="tag-row">' + habsRel.map(h => '<span class="tag">' + esc(h) + '</span>').join("") + '</div>' : '<p class="muted small">Nenhuma habilidade correspondente identificada automaticamente; confirme diretamente com o profissional.</p>') +
+    (pro.experienciaAnos != null ? '<p class="small"><b>Experiência informada:</b> ' + esc(String(pro.experienciaAnos)) + ' ano(s).</p>' : "") +
+    (pro.disponibilidade ? '<p class="small"><b>Disponibilidade informada:</b> ' + esc(pro.disponibilidade) + '</p>' : "") +
+    '<div><p class="small" style="font-weight:700;margin-bottom:4px">Por que recomendamos?</p><ul class="motivos">' + (motivos.map(m => '<li>' + esc(m) + '</li>').join("") || '<li>Compatibilidade calculada com base no cadastro.</li>') + '</ul></div>' +
+    (faltas.length ? '<div class="warn-box"><b>A confirmar:</b><ul class="motivos" style="margin-top:4px">' + faltas.map(f => '<li>' + esc(f) + '</li>').join("") + '</ul></div>' : "") +
+    '<div class="row" style="gap:8px"><button class="btn btn-sec" style="min-height:38px;padding:0 12px" type="button" data-toggle="' + perfilId + '">Ver perfil completo</button></div>' +
+    '<div id="' + perfilId + '" hidden class="stack" style="gap:6px;border-top:1px solid var(--linha);padding-top:8px">' +
+      (pro.descricaoTrabalhos ? '<p class="small"><b>Trabalhos realizados:</b> ' + esc(pro.descricaoTrabalhos) + '</p>' : "") +
+      (pro.tiposProjetos ? '<p class="small"><b>Tipos de projetos:</b> ' + esc(pro.tiposProjetos) + '</p>' : "") +
+      (pro.raioAtendimento ? '<p class="small"><b>Raio de atendimento:</b> ' + esc(pro.raioAtendimento) + '</p>' : "") +
+      (pro.portfolio ? '<p class="small"><b>Portfólio/fotos:</b> ' + esc(pro.portfolio) + '</p>' : "") +
+      (pro.fazReformasCompletas === true ? '<p class="small"><b>Atendimento:</b> Informa realizar reformas completas.</p>' : pro.fazReformasCompletas === false ? '<p class="small"><b>Atendimento:</b> Informa realizar serviços específicos.</p>' : "") +
+      (pro.obs ? '<p class="small"><b>Observações:</b> ' + esc(pro.obs) + '</p>' : "") +
+      (pro.tel ? '<p class="small"><b>Telefone:</b> <span class="tel">' + esc(pro.tel) + '</span></p>' : "") +
+      '<p class="small-note">Sugestão calculada automaticamente; não representa verificação, certificação ou garantia de adequação. Antes de contratar, confirme qualificações e responsabilidades necessárias.</p>' +
+    '</div>' +
+    cardAcoesContato(pro, pedido) +
+    '<div class="row" style="gap:8px"><button class="btn-ghost" type="button" data-copiar-texto="' + esc(msgShare) + '" data-copy-label="Resumo copiado. Revise antes de compartilhar.">Copiar resumo da solicitação</button></div>' +
+  '</div>';
+}
+
+function renderRecoCardsCompactos(itens, pedido){ return '<div class="reco-grid">' + (itens || []).map(it => renderProCardDetalhado(it, pedido)).join("") + '</div>'; }
+
+function renderRecoGroups(container, rec, pedido){
+  const vazio = $("#pro-reco-vazio"); const res = $("#pro-reco-resultado"); const porNec = $("#pro-reco-por-necessidade");
+  if (!rec || !rec.resultados || !rec.resultados.length) {
+    if (vazio) { vazio.hidden = false; vazio.innerHTML = '<div class="warn-box">Não encontramos profissionais compatíveis no cadastro para esta solicitação. Você pode ajustar a busca, cadastrar profissionais ou usar "Pensando em algo mais?" para organizar e encaminhar sua solicitação.</div>'; }
+    if (res) { res.hidden = true; res.innerHTML = ""; }
+    if (porNec) { porNec.hidden = true; porNec.innerHTML = ""; }
+    return;
+  }
+  if (vazio) vazio.hidden = true;
+  const mk = (titulo, itens, desc) => (itens && itens.length) ? '<div class="reco-group"><h3>' + titulo + ' <span class="badge b-neu">' + itens.length + '</span></h3><p class="muted small" style="margin-bottom:10px">' + esc(desc) + '</p>' + renderRecoCardsCompactos(itens, pedido) + '</div>' : "";
+  const blocos = [
+    mk("Alta compatibilidade", rec.grupos.alta || [], "Maior aderência às necessidades informadas, com base no cadastro."),
+    mk("Compatibilidade parcial", rec.grupos.parcial || [], "Podem atender parte do pedido; confirme os pontos indicados."),
+    mk("Compatibilidade a confirmar", rec.grupos.confirmar || [], "Há indícios de relação, mas faltam informações importantes para confirmar.")
+  ];
+  if (res) { res.hidden = false; res.innerHTML = blocos.filter(Boolean).join("") || ""; }
+
+  const multi = (typeof recomendacoesPorNecessidade === "function" ? recomendacoesPorNecessidade(pedido) : []);
+  if (porNec) {
+    if ((pedido.servicos || []).length > 1) {
+      porNec.hidden = false;
+      porNec.innerHTML = '<div class="reco-group"><h3>Profissionais por necessidade</h3><p class="muted small">Quando o projeto envolve especialidades diferentes, você pode combinar profissionais. As indicações abaixo são sugestões por necessidade (não conclusões técnicas definitivas).</p>' +
+        multi.map(n => '<div class="necessidade-bloco"><h4 style="margin-bottom:6px">' + esc(n.nome) + '</h4>' + (n.resultados && n.resultados.length ? renderRecoCardsCompactos(n.resultados.slice(0, 3), Object.assign({}, pedido, { servicos: [n.servico] })) : '<p class="muted small">Ainda não há alguém disponível no cadastro para esta necessidade específica.</p>') + '</div>').join("") + '</div>';
+    } else { porNec.hidden = true; porNec.innerHTML = ""; }
+  }
+}
+
+// Assistente local "Pensando em algo mais?" (sem IA externa configurada)
+let assistState = null;
+function iniciarAssistente(prefill){
+  const box = $("#assist-chat"); if (!box) return;
+  assistState = {
+    id: uid("sol"), criadoEm: new Date().toISOString(), finalizado: false, pedirHumano: false,
+    dados: { descricao: (prefill && prefill.descricao) || "", ambiente: (prefill && prefill.ambiente) || "", detalhes: "", tamanho: "", regiao: (prefill && prefill.regiao) || "", referencia: "", preferencia: "" },
+    mensagens: []
+  };
+  box.hidden = false; renderAssistente();
+  addBotMsg("Olá! Sou o assistente da Obrinha. Vou ajudar você a encontrar o profissional ideal para sua reforma. Conte um pouco sobre o que está planejando!");
+  if (assistState.dados.descricao) addBotMsg("Recebi uma descrição inicial. Se quiser, complemente com mais detalhes ou responda às perguntas para eu organizar sua solicitação.");
+}
+function addMsg(de, texto){ if (!assistState) return; assistState.mensagens.push({ de, texto, em: new Date().toISOString() }); renderAssistente(); }
+function addBotMsg(t){ addMsg("bot", t); }
+function addUserMsg(t){ addMsg("user", t); }
+function assistPerguntaAtual(){
+  const d = assistState.dados; const desc = (d.descricao || "") + " " + (d.detalhes || "");
+  if (!d.ambiente) return "ambiente";
+  if (desc.trim().length < 18) return "detalhes";
+  if (!d.tamanho) return "tamanho";
+  if (!d.regiao) return "regiao";
+  return null;
+}
+function textoPergunta(chave){
+  return ({
+    ambiente: "Em qual ambiente será realizado o serviço?",
+    detalhes: "O que exatamente você deseja modificar ou instalar?",
+    tamanho: "É uma reforma pequena, média ou grande (ou reforma completa)?",
+    regiao: "Em qual bairro ou região será realizada?"
+  })[chave] || null;
+}
+function interpretarRespostaAssistente(texto){
+  const t = String(texto || "").trim(); const d = assistState.dados; const lower = normalizarTexto(t);
+  if (/conversar com (uma )?pessoa|atendimento humano|prefiro humano/.test(lower)) { assistState.pedirHumano = true; return; }
+  const pergunta = assistPerguntaAtual();
+  if (!d.descricao) d.descricao = t;
+  else if (pergunta === "ambiente" && !d.ambiente) d.ambiente = t;
+  else if (pergunta === "detalhes") d.detalhes = (d.detalhes ? d.detalhes + " " : "") + t;
+  else if (pergunta === "tamanho") d.tamanho = t;
+  else if (pergunta === "regiao") d.regiao = t;
+  else if (!d.referencia && /refer|foto|projeto|exemplo/.test(lower)) d.referencia = t;
+  else d.detalhes = (d.detalhes ? d.detalhes + " " : "") + t;
+  if (!d.ambiente) {
+    const ambs = ["banheiro","cozinha","quarto","sala","quintal","área externa","area externa","fachada","lavanderia","varanda","garagem","escritório","escritorio","corredor"];
+    const achado = ambs.find(a => lower.includes(normalizarTexto(a))); if (achado) d.ambiente = achado;
+  }
+}
+function montarFichaAssistente(){
+  const d = assistState.dados;
+  const descricao = [d.descricao, d.detalhes].filter(Boolean).join(". ");
+  const pedido = montarPedidoProfissionais({ servicos: [], descricao, regiao: d.regiao, ambiente: d.ambiente, complexidade: d.tamanho });
+  const req = requisitosDeServicos(pedido.servicos || []);
+  const duvidas = [];
+  if (!d.regiao) duvidas.push("Confirmar bairro/região do atendimento.");
+  if (!d.tamanho) duvidas.push("Confirmar se é reforma pequena, média ou completa.");
+  if (!(pedido.servicos || []).length) duvidas.push("Detalhar melhor o serviço desejado para identificar especialidades com mais precisão.");
+  duvidas.push("Confirmar medidas, materiais, prazos e responsabilidades com o profissional.");
+  if (/(eletric|hidraul|estrutur|gas)/.test(normalizarTexto(descricao))) duvidas.push("Verificar se a atividade exige profissional habilitado ou responsável técnico.");
+  return { pedido, ficha: {
+    resumo: descricao || "Solicitação informada pelo cliente.",
+    ambiente: d.ambiente || "Não informado",
+    servicos: pedido.servicos || [],
+    especialidades: req.especialidades || [],
+    habilidades: req.habilidades || [],
+    regiao: d.regiao || "Não informada",
+    complementares: [d.tamanho ? ("Porte/complexidade: " + d.tamanho) : "", d.referencia ? ("Referência: " + d.referencia) : "", d.preferencia ? ("Preferência: " + d.preferencia) : ""].filter(Boolean).join(" | ") || "Não informadas",
+    duvidas: duvidas.join(" ")
+  }};
+}
+function salvarSolicitacao(sol){
+  try {
+    mem.solicitacoes = Array.isArray(mem.solicitacoes) ? mem.solicitacoes : [];
+    const i = mem.solicitacoes.findIndex(x => x.id === sol.id);
+    if (i >= 0) mem.solicitacoes[i] = sol; else mem.solicitacoes.unshift(sol);
+    save(); return true;
+  } catch (e) { toast("Não foi possível salvar a solicitação no navegador."); return false; }
+}
+function finalizarAssistente(){
+  const mf = montarFichaAssistente();
+  assistState.ficha = mf.ficha; assistState.pedido = mf.pedido; assistState.finalizado = true;
+  assistState.status = assistState.pedirHumano ? "aguardando encaminhamento humano" : "organizada";
+  const sol = { id: assistState.id, criadoEm: assistState.criadoEm, atualizadoEm: new Date().toISOString(), status: assistState.status, mensagens: assistState.mensagens.slice(), pedido: mf.pedido, ficha: mf.ficha };
+  salvarSolicitacao(sol);
+  addBotMsg("Organizei sua solicitação em uma ficha. Revise o resumo abaixo antes de encaminhar. As necessidades são possibilidades identificadas, não conclusões técnicas definitivas.");
+  renderAssistente(true);
+  if (typeof recomendarProfissionais === "function") {
+    const rec = recomendarProfissionais(mf.pedido);
+    renderRecoGroups($("#pro-reco-resultado"), rec, mf.pedido);
+    proUI.pedido = mf.pedido; proUI.rec = rec;
+  }
+}
+function renderAssistente(mostrarFicha){
+  const box = $("#assist-chat"); if (!box || !assistState) return;
+  const msgs = assistState.mensagens.map(m => '<div class="msg ' + (m.de === "user" ? "user" : "bot") + '">' + esc(m.texto) + '</div>').join("");
+  let fichaHTML = "";
+  const mf = (mostrarFicha || assistState.finalizado) ? (assistState.ficha ? { pedido: assistState.pedido, ficha: assistState.ficha } : montarFichaAssistente()) : null;
+  if (mf) {
+    const pedido = mf.pedido, ficha = mf.ficha;
+    const recNec = typeof recomendacoesPorNecessidade === "function" ? recomendacoesPorNecessidade(pedido) : [];
+    const semAlguem = recNec.filter(n => !n.resultados || !n.resultados.length).map(n => n.nome);
+    fichaHTML = '<div class="solicitacao-card stack" style="gap:8px"><h3>Ficha organizada da solicitação</h3>' +
+      '<p><b>Resumo:</b> ' + esc(ficha.resumo) + '</p>' +
+      '<p><b>Ambiente:</b> ' + esc(ficha.ambiente) + '</p>' +
+      '<p><b>Serviços identificados (possibilidades):</b> ' + ((ficha.servicos || []).length ? ficha.servicos.map(servicoBuscaNome).map(esc).join(", ") : "A identificar com mais detalhes") + '</p>' +
+      '<p><b>Especialidades possivelmente necessárias:</b> ' + ((ficha.especialidades || []).length ? ficha.especialidades.map(espNome).map(esc).join(", ") : "A identificar") + '</p>' +
+      '<p><b>Habilidades necessárias:</b> ' + ((ficha.habilidades || []).length ? ficha.habilidades.map(esc).join(", ") : "A identificar") + '</p>' +
+      '<p><b>Região:</b> ' + esc(ficha.regiao || "Não informada") + '</p>' +
+      '<p><b>Informações complementares:</b> ' + esc(ficha.complementares || "Não informadas") + '</p>' +
+      '<p><b>Dúvidas a esclarecer:</b> ' + esc(ficha.duvidas || "") + '</p>' +
+      (semAlguem.length ? '<p class="warn-box">Ainda não há alguém disponível no cadastro para: ' + esc(semAlguem.join(", ")) + '.</p>' : "") +
+      '<p class="small-note">As necessidades são possibilidades identificadas, não conclusões técnicas definitivas. Recomendações e encaminhamentos são sugestões com base no cadastro; confirme qualificações e responsabilidades antes de contratar. Integração com IA externa: não configurada neste ambiente.</p>' +
+      '<div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn btn-sec" type="button" id="as-copiar">Copiar resumo</button><button class="btn btn-sec" type="button" id="as-salvar">Salvar solicitação</button><button class="btn btn-sec" type="button" id="as-humano">Prefiro conversar com uma pessoa</button><button class="btn btn-primary" type="button" id="as-compartilhar" ' + ((typeof CONFIG_ATENDIMENTO !== "undefined" && CONFIG_ATENDIMENTO.whatsappHumano) ? "" : "disabled") + '>Compartilhar pelo WhatsApp (canal humano)</button></div>' +
+      (!((typeof CONFIG_ATENDIMENTO !== "undefined") && CONFIG_ATENDIMENTO.whatsappHumano) ? '<p class="small-note">Canal humano por WhatsApp não configurado. A solicitação pode ser salva no navegador e copiada/exportada; nenhum envio automático é feito.</p>' : "") +
+      (recNec.length ? '<div class="necessidade-bloco"><b>Profissionais recomendados por necessidade (sugestões):</b>' + recNec.map(n => '<div style="margin-top:8px"><span class="badge b-neu">' + esc(n.nome) + '</span> ' + ((n.resultados && n.resultados.length) ? '<span class="small">' + n.resultados.slice(0,2).map(x => esc(x.pro.nome) + " (" + x.score + "%)").join(", ") + '</span>' : '<span class="small muted">Sem compatíveis cadastrados.</span>') + '</div>').join("") + '</div>' : "") +
+      '</div>';
+  }
+  const pergunta = !assistState.finalizado ? assistPerguntaAtual() : null;
+  const hint = !assistState.finalizado ? (pergunta ? textoPergunta(pergunta) : 'Se quiser, acrescente referências ou preferências. Quando estiver pronto, clique em "Organizar solicitação".') : "Solicitação organizada e salva localmente. Você pode revisar, copiar ou encaminhar com sua confirmação.";
+  box.innerHTML = '<div class="row between"><h3 style="margin:0">Atendimento da Obrinha</h3><span class="badge b-neu">' + ((typeof CONFIG_ATENDIMENTO !== "undefined" && CONFIG_ATENDIMENTO.iaHabilitada) ? "Assistente IA configurado" : "Assistente local (sem IA externa)") + '</span></div>' +
+    '<div class="chat-log" id="chat-log">' + (msgs || '<div class="msg bot">Olá!</div>') + '</div>' +
+    '<p class="small-note">' + esc(hint) + '</p>' +
+    (!assistState.finalizado ? '<form class="chat-form" id="chat-form"><input id="chat-input" placeholder="Escreva sua mensagem..." autocomplete="off"><button class="btn btn-primary" type="submit">Enviar</button></form><div class="row" style="gap:8px"><button class="btn btn-sec" type="button" id="as-organizar">Organizar solicitação</button><button class="btn-ghost" type="button" id="as-humano-inline">Prefiro conversar com uma pessoa</button></div>' : "") +
+    fichaHTML +
+    '<p class="small-note">Nenhum dado é enviado automaticamente. Compartilhamentos exigem sua ação explícita.</p>';
+  const log = $("#chat-log"); if (log) log.scrollTop = log.scrollHeight;
+  const form = $("#chat-form");
+  if (form) form.onsubmit = (e) => {
+    e.preventDefault(); const inp = $("#chat-input"); const v = (inp && inp.value || "").trim(); if (!v) return; inp.value = "";
+    addUserMsg(v); interpretarRespostaAssistente(v);
+    if (assistState.pedirHumano) { addBotMsg("Certo. Vou organizar o que você informou para encaminhamento humano. Revise o resumo antes de compartilhar."); finalizarAssistente(); return; }
+    const prox = assistPerguntaAtual(); if (prox) addBotMsg(textoPergunta(prox)); else addBotMsg("Entendi. Se quiser, posso organizar sua solicitação agora.");
+  };
+  const org = $("#as-organizar"); if (org) org.onclick = () => finalizarAssistente();
+  const humIn = $("#as-humano-inline"); if (humIn) humIn.onclick = () => { assistState.pedirHumano = true; addUserMsg("Prefiro conversar com uma pessoa."); finalizarAssistente(); };
+  const copiar = $("#as-copiar"); if (copiar) copiar.onclick = () => { const sol = { pedido: assistState.pedido, ficha: assistState.ficha, criadoEm: assistState.criadoEm, status: assistState.status }; copiarTexto(resumoSolicitacaoTexto(sol), "Resumo copiado. Revise antes de compartilhar."); };
+  const salvar = $("#as-salvar"); if (salvar) salvar.onclick = () => { const sol = { id: assistState.id, criadoEm: assistState.criadoEm, atualizadoEm: new Date().toISOString(), status: assistState.status || "salva", mensagens: (assistState.mensagens || []).slice(), pedido: assistState.pedido, ficha: assistState.ficha }; if (salvarSolicitacao(sol)) toast("Solicitação salva no navegador."); };
+  const humano = $("#as-humano"); if (humano) humano.onclick = () => { assistState.pedirHumano = true; assistState.status = "aguardando encaminhamento humano"; const sol = { id: assistState.id, criadoEm: assistState.criadoEm, atualizadoEm: new Date().toISOString(), status: assistState.status, mensagens: (assistState.mensagens || []).slice(), pedido: assistState.pedido, ficha: assistState.ficha }; salvarSolicitacao(sol); toast("Solicitação registrada para encaminhamento humano. Revise e compartilhe se desejar."); renderAssistente(true); };
+  const comp = $("#as-compartilhar"); if (comp) comp.onclick = () => { if (!(typeof CONFIG_ATENDIMENTO !== "undefined" && CONFIG_ATENDIMENTO.whatsappHumano)) { toast("Canal humano não configurado. Solicitação salva localmente para copiar/exportar."); return; } const sol = { pedido: assistState.pedido, ficha: assistState.ficha, criadoEm: assistState.criadoEm, status: assistState.status }; const url = waLink(CONFIG_ATENDIMENTO.whatsappHumano, resumoSolicitacaoTexto(sol)); if (!url) { toast("Número de atendimento inválido."); return; } window.open(url, "_blank", "noopener"); toast("Abrindo WhatsApp para sua revisão e envio (nenhum envio automático foi feito)."); };
+}
+
+function renderSolicitacoesSalvas(){
+  const lista = Array.isArray(mem.solicitacoes) ? mem.solicitacoes : [];
+  if (!lista.length) { dialogo('<h2>Solicitações salvas</h2><p class="muted">Nenhuma solicitação salva neste navegador.</p><div class="row" style="justify-content:flex-end"><button class="btn btn-primary" type="button" id="dlg-ok">Fechar</button></div>'); $("#dlg-ok").onclick = () => $("#dlg").close(); return; }
+  const html = lista.map(s => '<div class="solicitacao-card stack" style="gap:6px"><div class="row between"><b>' + esc((s.ficha && s.ficha.resumo) || "Solicitação") + '</b><span class="badge b-neu">' + esc(new Date(s.criadoEm || Date.now()).toLocaleDateString("pt-BR")) + '</span></div><p class="small muted">Status: ' + esc(s.status || "salva") + '</p><div class="row" style="gap:8px"><button class="btn btn-sec" type="button" data-sol-copy="' + s.id + '">Copiar</button><button class="btn-ghost" type="button" data-sol-del="' + s.id + '">Excluir</button></div></div>').join("");
+  dialogo('<h2>Solicitações salvas</h2><p class="muted small">Dados armazenados localmente neste navegador. Você pode excluir quando quiser.</p><div class="stack" style="gap:10px;max-height:55vh;overflow:auto">' + html + '</div><div class="row" style="justify-content:flex-end"><button class="btn btn-primary" type="button" id="dlg-ok">Fechar</button></div>');
+  $("#dlg-ok").onclick = () => $("#dlg").close();
+  $("#dlg-body").querySelectorAll("[data-sol-copy]").forEach(b => b.onclick = () => { const sol = (mem.solicitacoes || []).find(x => x.id === b.dataset.solCopy); if (sol) copiarTexto(resumoSolicitacaoTexto(sol), "Resumo copiado. Revise antes de compartilhar."); });
+  $("#dlg-body").querySelectorAll("[data-sol-del]").forEach(b => b.onclick = () => confirmar("Excluir solicitação?", "A solicitação será removida deste navegador.", "Excluir", () => { mem.solicitacoes = (mem.solicitacoes || []).filter(x => x.id !== b.dataset.solDel); save(); renderSolicitacoesSalvas(); toast("Solicitação excluída."); }));
+}
+
+// UI de busca / rede
+let proUI = { pedido: null, rec: null };
+
+function preencherBuscaProfissionais(){
+  const sel = $("#pb-servicos"); if (sel && !sel.dataset.ready) { sel.innerHTML = (typeof SERVICOS_BUSCA !== "undefined" ? SERVICOS_BUSCA : []).map(([v, t]) => '<option value="' + v + '">' + esc(t) + '</option>').join(""); sel.dataset.ready = "1"; }
+  const esp = $("#p-especialidade"); if (esp && !esp.dataset.ready) { esp.innerHTML = '<option value="">Selecione...</option>' + Object.entries(typeof ESPECIALIDADES !== "undefined" ? ESPECIALIDADES : {}).map(([id, e]) => '<option value="' + id + '">' + esc(e.nome) + '</option>').join(""); esp.dataset.ready = "1"; }
+  const filtro = $("#pf-filtro"); if (filtro) { const atualV = filtro.value; filtro.innerHTML = '<option value="">Todos</option>' + (typeof SERVICOS_BUSCA !== "undefined" ? SERVICOS_BUSCA : []).map(([v, t]) => '<option value="' + v + '">' + esc(t) + '</option>').join(""); filtro.value = atualV || ""; }
+  const comSel = $("#pb-comodo"), wrap = $("#pb-comodo-wrap"); const o = obraAtual();
+  if (comSel && wrap) {
+    if (o && o.comodos && o.comodos.length) {
+      wrap.hidden = false;
+      comSel.innerHTML = '<option value="">Não usar cômodo</option>' + o.comodos.map(c => '<option value="' + c.id + '">' + esc(c.nome) + ' — ' + esc((c.servicos || []).map(x => SERVNOME[x] || x).join(", ")) + '</option>').join("");
+    } else { wrap.hidden = true; comSel.innerHTML = '<option value="">Sem obra/cômodos</option>'; }
+  }
+  atualizarHabilidadesForm();
+}
+
+function atualizarHabilidadesForm(){
+  const esp = $("#p-especialidade"); const box = $("#p-habilidades"); if (!esp || !box) return;
+  const e = (typeof ESPECIALIDADES !== "undefined" ? ESPECIALIDADES : {})[esp.value];
+  const habs = e ? e.habilidades : [];
+  box.innerHTML = habs.map(h => '<label class="chk"><input type="checkbox" name="p-hab" value="' + esc(h) + '"><span>' + esc(h) + '</span></label>').join("") || '<span class="muted small">Selecione uma especialidade para ver habilidades sugeridas (catálogo extensível).</span>';
+}
+
+function coletarPedidoDaBusca(){
+  const sel = $("#pb-servicos");
+  const servs = sel ? [...sel.selectedOptions].map(o => o.value) : [];
+  const ambiente = $("#pb-ambiente") ? $("#pb-ambiente").value : "";
+  const regiao = $("#pb-regiao") ? $("#pb-regiao").value.trim() : "";
+  const complexidade = $("#pb-complexidade") ? $("#pb-complexidade").value : "";
+  const desc = $("#pb-desc") ? $("#pb-desc").value.trim() : "";
+  const comodoId = $("#pb-comodo") ? $("#pb-comodo").value : "";
+  let pedido = montarPedidoProfissionais({ servicos: servs, descricao: desc, regiao, ambiente, complexidade, comodoId: comodoId || null, obraId: (obraAtual() || {}).id || null });
+  if (comodoId) {
+    const o = obraAtual(); const c = o && o.comodos.find(x => x.id === comodoId);
+    if (c) {
+      const servsComodo = pedidoDeServicosComodo(c.servicos);
+      pedido = montarPedidoProfissionais({ servicos: [...new Set([...(pedido.servicos || []), ...servsComodo])], descricao: [desc, c.nome, (c.servicos || []).map(x => SERVNOME[x]).join(", ")].filter(Boolean).join(" - "), regiao, ambiente: ambiente || nomeTipo(c), complexidade, comodoId: c.id, obraId: o.id });
     }
+  }
+  return pedido;
+}
+
+function executarBuscaProfissionais(){
+  if (typeof montarPedidoProfissionais !== "function") return;
+  const pedido = coletarPedidoDaBusca();
+  if (!(pedido.servicos || []).length && !pedido.descricao) { toast("Informe serviços ou descreva o que deseja fazer."); return; }
+  const rec = recomendarProfissionais(pedido);
+  proUI.pedido = pedido; proUI.rec = rec;
+  renderRecoGroups($("#pro-reco-resultado"), rec, pedido);
+}
+
+function proCardRede(p){
+  const habs = (p.habilidades || []).slice(0, 5);
+  return '<div class="pro"><div class="row" style="gap:10px;flex-wrap:nowrap"><span class="av">' + esc((p.nome || "?").trim()[0] || "?").toUpperCase() + '</span><div style="min-width:0"><p style="font-weight:700">' + esc(p.nome || "") + (p.exemplo ? ' <span class="badge b-neu">Exemplo</span>' : "") + '</p><p class="muted small">' + esc(espNome(p.especialidade)) + (p.regiao ? " · " + esc(p.regiao) : "") + '</p></div></div>' +
+    (habs.length ? '<div class="tag-row">' + habs.map(h => '<span class="tag">' + esc(h) + '</span>').join("") + '</div>' : "") +
+    (p.experienciaAnos != null ? '<p class="small muted">' + esc(String(p.experienciaAnos)) + ' ano(s) de experiência informada</p>' : "") +
+    (p.disponibilidade ? '<p class="small muted">Disponibilidade: ' + esc(p.disponibilidade) + '</p>' : "") +
+    (p.fazReformasCompletas === true ? '<p class="small muted">Informa realizar reformas completas</p>' : p.fazReformasCompletas === false ? '<p class="small muted">Informa realizar serviços específicos</p>' : "") +
+    '<p class="tel">' + esc(p.tel || "") + '</p>' +
+    (p.obs ? '<p class="muted small">' + esc(p.obs) + '</p>' : "") +
+    '<div class="row" style="gap:8px">' + (p.exemplo ? '<span class="muted small">Contato fictício para demonstração.</span>' : '<a class="btn btn-primary" style="min-height:40px;padding:0 14px" href="' + waLink(p.tel, "Olá! Vi seu contato na Obrinha e gostaria de um orçamento.") + '" target="_blank" rel="noopener">WhatsApp</a><button class="btn btn-sec" style="min-height:40px;padding:0 14px" type="button" data-copiar="' + esc(p.tel || "") + '">Copiar telefone</button>') + '</div></div>';
+}
+
+function renderProsLista(){
+  const f = $("#pf-filtro") ? $("#pf-filtro").value : "";
+  const lista = (mem.pros || []).filter(p => {
+    if (!f) return true;
+    const req = (typeof CATALOGO_SERVICO_REQUISITOS !== "undefined" ? CATALOGO_SERVICO_REQUISITOS : {})[f];
+    if (!req) return true;
+    if (req.especialidades && req.especialidades.includes(p.especialidade)) return true;
+    const habs = (p.habilidades || []).map(h => normalizarTexto(h));
+    return (req.habilidades || []).some(h => habs.some(ph => ph.includes(normalizarTexto(h)) || normalizarTexto(h).includes(ph)));
+  });
+  const cont = $("#pro-lista"); if (!cont) return;
+  cont.innerHTML = lista.length ? lista.map(p => proCardRede(p)).join("") : '<div class="empty" style="grid-column:1/-1"><svg width="90" height="90" aria-hidden="true"><use href="#dico"/></svg><p class="muted">Nenhum profissional ' + (f ? "compatível com este filtro" : "cadastrado") + ' ainda. Use o formulário ao lado.</p></div>';
+  cont.querySelectorAll(".pro").forEach((el, i) => {
+    const pro = lista[i]; if (!pro) return;
+    el.insertAdjacentHTML("beforeend", '<button class="btn-ghost" type="button" style="align-self:flex-start">Excluir</button>');
+    el.lastElementChild.onclick = () => confirmar('Excluir ' + esc(pro.nome) + '?', 'O profissional sai da lista e deixa de aparecer nas sugestões.', 'Excluir', () => { mem.pros = (mem.pros || []).filter(x => x.id !== pro.id); save(); renderProsLista(); toast("Profissional excluído."); });
+  });
+}
+
+function renderPros(){
+  _bindProUI();
+  preencherBuscaProfissionais();
+  renderProsLista();
+  if (atual && atual.pedidoContext && typeof recomendarProfissionais === "function") {
+    const ctx = atual.pedidoContext;
+    const sel = $("#pb-servicos"); if (sel && ctx.servicos) { [...sel.options].forEach(o => o.selected = ctx.servicos.includes(o.value)); }
+    if ($("#pb-desc")) $("#pb-desc").value = ctx.descricao || "";
+    if ($("#pb-ambiente") && ctx.ambiente) $("#pb-ambiente").value = ctx.ambiente;
+    if ($("#pb-regiao") && ctx.regiao) $("#pb-regiao").value = ctx.regiao;
+    if ($("#pb-comodo") && ctx.comodoId) $("#pb-comodo").value = ctx.comodoId;
+    const rec = recomendarProfissionais(ctx); proUI.pedido = ctx; proUI.rec = rec; renderRecoGroups($("#pro-reco-resultado"), rec, ctx);
+    atual.pedidoContext = null;
+  } else if (proUI.rec && proUI.pedido) {
+    renderRecoGroups($("#pro-reco-resultado"), proUI.rec, proUI.pedido);
+  } else {
+    const vazio = $("#pro-reco-vazio"); if (vazio) { vazio.hidden = false; vazio.innerHTML = "Preencha a busca acima ou use um cômodo da obra para ver recomendações."; }
+    const res = $("#pro-reco-resultado"); if (res) { res.hidden = true; res.innerHTML = ""; }
+    const pn = $("#pro-reco-por-necessidade"); if (pn) { pn.hidden = true; pn.innerHTML = ""; }
+  }
+  montarInfos();
+}
+
+document.addEventListener("change", e => { if (e.target && e.target.id === "p-especialidade") atualizarHabilidadesForm(); if (e.target && e.target.id === "pf-filtro") renderProsLista(); });
+document.addEventListener("click", e => {
+  const t = e.target;
+  const tg = t.closest && t.closest("[data-toggle]"); if (tg) { const el = document.getElementById(tg.dataset.toggle); if (el) { el.hidden = !el.hidden; tg.textContent = el.hidden ? "Ver perfil completo" : "Ocultar perfil"; } }
+  const copy = t.closest && t.closest("[data-copiar]"); if (copy) { copiarTexto(copy.dataset.copiar, "Telefone copiado."); }
+  const copyTxt = t.closest && t.closest("[data-copiar-texto]"); if (copyTxt) { copiarTexto(copyTxt.dataset.copiarTexto, copyTxt.dataset.copyLabel || "Copiado."); }
+});
+
+function proFormOnSubmit(){
+  const nome = ($("#p-nome") || {}).value ? $("#p-nome").value.trim() : "";
+  const tel = ($("#p-tel") || {}).value ? $("#p-tel").value.trim() : "";
+  const d = telDig(tel);
+  const especialidade = ($("#p-especialidade") || {}).value || "";
+  const habilidades = [...document.querySelectorAll("input[name=p-hab]:checked")].map(i => i.value);
+  const regiao = ($("#p-regiao") || {}).value ? $("#p-regiao").value.trim() : "";
+  const raio = ($("#p-raio") || {}).value ? $("#p-raio").value.trim() : "";
+  const expRaw = ($("#p-exp") || {}).value != null ? $("#p-exp").value : "";
+  const exp = expRaw === "" ? null : Number(expRaw);
+  const disp = ($("#p-disp") || {}).value ? $("#p-disp").value.trim() : "";
+  const desc = ($("#p-desc") || {}).value ? $("#p-desc").value.trim() : "";
+  const projetos = ($("#p-projetos") || {}).value ? $("#p-projetos").value.trim() : "";
+  const portfolio = ($("#p-portfolio") || {}).value ? $("#p-portfolio").value.trim() : "";
+  const obs = ($("#p-obs") || {}).value ? $("#p-obs").value.trim() : "";
+  const refRadio = document.querySelector("input[name=p-reforma]:checked");
+  const faz = refRadio ? (refRadio.value === "completa" ? true : refRadio.value === "especificos" ? false : null) : null;
+  const erro = (m, el) => { if ($("#e-pro")) $("#e-pro").textContent = m; if (el) { el.setAttribute("aria-invalid", "true"); el.focus(); } };
+  ["#p-nome","#p-tel","#p-especialidade","#p-exp"].forEach(x => { const el = $(x); if (el) el.removeAttribute("aria-invalid"); });
+  if (!nome) return erro("Digite o nome do profissional.", $("#p-nome"));
+  if (d.length < 10 || d.length > 11) return erro("Digite o telefone com DDD, por exemplo (11) 98765-4321.", $("#p-tel"));
+  if ((mem.pros || []).some(p => telDig(p.tel) === d)) return erro("Este telefone já está cadastrado.", $("#p-tel"));
+  if (!especialidade) return erro("Selecione a especialidade principal.", $("#p-especialidade"));
+  if (!habilidades.length) return erro("Selecione pelo menos uma habilidade específica.");
+  if (exp != null && (!isFinite(exp) || exp < 0 || exp > 60)) return erro("Informe anos de experiência entre 0 e 60.", $("#p-exp"));
+
+  const legacy = new Set();
+  if (especialidade === "pintor") { legacy.add("paredes"); if (habilidades.some(h => /massa/i.test(h))) legacy.add("massa"); }
+  if (especialidade === "pedreiro" || especialidade === "azulejista" || especialidade === "instalador_pisos") {
+    if (habilidades.some(h => /piso|porcelanato/i.test(h))) legacy.add("piso");
+    if (habilidades.some(h => /revest|azulejo/i.test(h))) legacy.add("revest");
+    if (habilidades.some(h => /rodap/i.test(h))) legacy.add("rodape");
+  }
+  if (especialidade === "eletricista") legacy.add("eletrica");
+  if (especialidade === "encanador") legacy.add("hidraulica");
+  if (especialidade === "manutencao_geral") legacy.add("reparos");
+  if (especialidade === "gesseiro" || especialidade === "instalador_drywall") legacy.add("reparos");
+
+  const pro = {
+    id: uid("pro"), nome, tel, regiao, raioAtendimento: raio, especialidade, habilidades, experienciaAnos: exp,
+    descricaoTrabalhos: desc, tiposProjetos: projetos, disponibilidade: disp, portfolio, fazReformasCompletas: faz,
+    obs, servicos: [...legacy], criadoEm: new Date().toISOString(), atualizadoEm: new Date().toISOString()
+  };
+  mem.pros = Array.isArray(mem.pros) ? mem.pros : [];
+  mem.pros.unshift(pro);
+  save();
+  if ($("#f-pro")) $("#f-pro").reset();
+  atualizarHabilidadesForm();
+  if ($("#e-pro")) $("#e-pro").textContent = "";
+  renderProsLista();
+  toast("Profissional cadastrado.");
+}
+
+function _bindProUI(){
+  const b = $("#pb-buscar"); if (b && !b.dataset.ready) { b.dataset.ready = "1"; b.onclick = executarBuscaProfissionais; }
+  const l = $("#pb-limpar"); if (l && !l.dataset.ready) { l.dataset.ready = "1"; l.onclick = () => { ["#pb-desc","#pb-regiao"].forEach(id => { const el = $(id); if (el) el.value = ""; }); ["#pb-ambiente","#pb-complexidade","#pb-comodo"].forEach(id => { const el = $(id); if (el) el.value = ""; }); const sel = $("#pb-servicos"); if (sel) [...sel.options].forEach(o => o.selected = false); proUI = { pedido: null, rec: null }; renderPros(); }; }
+  const conv = $("#btn-conversar-projeto"); if (conv && !conv.dataset.ready) { conv.dataset.ready = "1"; conv.onclick = () => { iniciarAssistente({ descricao: $("#pb-desc") ? $("#pb-desc").value : "", ambiente: $("#pb-ambiente") ? $("#pb-ambiente").value : "", regiao: $("#pb-regiao") ? $("#pb-regiao").value : "" }); }; }
+  const sols = $("#btn-ver-solicitacoes"); if (sols && !sols.dataset.ready) { sols.dataset.ready = "1"; sols.onclick = renderSolicitacoesSalvas; }
+  const fp = $("#f-pro"); if (fp && !fp.dataset.bound) {
+    fp.dataset.bound = "1";
+    fp.querySelectorAll("[data-submit]").forEach(btn => btn.addEventListener("click", proFormOnSubmit));
+    fp.addEventListener("keydown", e => { if (e.key === "Enter" && e.target.tagName === "INPUT" && e.target.type !== "checkbox" && e.target.type !== "radio") { e.preventDefault(); proFormOnSubmit(); } });
+    fp.addEventListener("submit", e => e.preventDefault());
+  }
+}
+
+const btnProC1 = $("#btn-pro-c1");
+if (btnProC1) btnProC1.onclick = () => {
+  const servs = [...document.querySelectorAll("input[name=serv]:checked")].map(i => i.value);
+  const pedido = typeof montarPedidoProfissionais === "function"
+    ? montarPedidoProfissionais({ servicos: pedidoDeServicosComodo(servs), descricao: servs.map(x => SERVNOME[x]).join(", "), regiao: "", ambiente: (atual.rascunho && nomeTipo(atual.rascunho)) || "" })
+    : { servicos: servs, descricao: "" };
+  const rec = typeof recomendarProfissionais === "function" ? recomendarProfissionais(pedido) : { resultados: [] };
+  atual.pedidoContext = pedido;
+  if (!rec.resultados.length) {
+    dialogo('<h2>Recomendações para sua obra</h2><div class="warn-box">Não encontramos profissionais compatíveis no cadastro para os serviços selecionados. Você pode cadastrar profissionais ou usar "Pensando em algo mais?" para organizar sua solicitação.</div><div class="row" style="justify-content:flex-end"><button class="btn btn-sec" type="button" id="dlg-cancel">Fechar</button><button class="btn btn-primary" type="button" id="dlg-ok">Abrir profissionais</button></div>');
+  } else {
+    dialogo('<h2>Recomendações para sua obra</h2><p class="muted small">Sugestões calculadas com base no cadastro (0 a 100). Confirme qualificações e disponibilidade.</p><div class="stack" style="gap:10px;max-height:55vh;overflow:auto">' + renderRecoCardsCompactos(rec.resultados.slice(0, 5), pedido) + '</div><div class="row" style="justify-content:flex-end"><button class="btn btn-sec" type="button" id="dlg-cancel">Fechar</button><button class="btn btn-primary" type="button" id="dlg-ok">Ver página completa</button></div>');
+  }
+  $("#dlg-cancel").onclick = () => $("#dlg").close();
+  $("#dlg-ok").onclick = () => { $("#dlg").close(); go("profissionais"); };
 };
+
 /* ================= CONCLUIR CÔMODO ================= */
 function concluir(c) {
     dialogo(`<h2>Concluir ${esc(c.nome)}</h2><p class="muted">Sobrou material?</p>
@@ -902,7 +1285,8 @@ function confirmar(t, txt, btn, fn) {
 }
 /* ================= INÍCIO DO APP ================= */
 load();
-if (! mem.inicializado) {
+if (!Array.isArray(mem.solicitacoes)) mem.solicitacoes = [];
+if (!mem.inicializado) {
     const ex = {
         id: "obra-exemplo", nome: "Exemplo · Reforma da Carla", orcamento: 5000, uf: "SP", compras:  [ {
             item: "Mão de obra do pintor", loja: "", valor: 1800, data: new Date().toISOString().slice(0, 10), cat: "mao"
@@ -914,23 +1298,22 @@ if (! mem.inicializado) {
             detalhes:  {
                 demaos: 2, acab: "Fosco", cor: false, nova: false, massaDem: 2, peca: "600x600", m2: 2.5, assent: "reto", junta: 2, rAlt: 0, barra: 2.4
             },
-            escolhas:  {
-            },
+            escolhas: {},
             salvo: true
         }]
     };
-    calcular(ex.comodos [0]);
+    calcular(ex.comodos[0]);
     mem.obras.push(ex);
     mem.inicializado = true;
     save();
 }
-if (! mem.pros) {
-    mem.pros = [ {
-        id: "pro-ex1", nome: "Marcos Pinturas", tel: "(11) 90000-0001", servicos:  ["paredes", "massa"], regiao: "Zona Leste, São Paulo", obs: "Atende aos sábados", exemplo: true
-    },
-    {
-        id: "pro-ex2", nome: "Ana Revestimentos", tel: "(11) 90000-0002", servicos:  ["piso", "revest", "rodape"], regiao: "Centro, São Paulo", exemplo: true
-    }];
-    save()
+if (!mem.pros) {
+    mem.pros = [
+      { id:"pro-ex1", nome:"Marcos Pinturas", tel:"(11) 90000-0001", especialidade:"pintor", habilidades:["Pintura interna","Aplicação de massa corrida","Preparação de paredes","Pintura de tetos"], experienciaAnos:8, descricaoTrabalhos:"Pintura residencial e preparação de superfícies (exemplo).", tiposProjetos:"Quartos, salas e áreas internas", disponibilidade:"Seg a Sáb", regiao:"Zona Leste, São Paulo", obs:"Atende aos sábados (exemplo)", fazReformasCompletas:false, servicos:["paredes","massa"], exemplo:true, criadoEm:new Date().toISOString(), atualizadoEm:new Date().toISOString() },
+      { id:"pro-ex2", nome:"Ana Revestimentos", tel:"(11) 90000-0002", especialidade:"azulejista", habilidades:["Assentamento de porcelanato","Assentamento de azulejos","Revestimento de áreas molhadas","Rejuntamento","Nivelamento de superfícies"], experienciaAnos:6, descricaoTrabalhos:"Instalação de pisos e revestimentos (exemplo).", tiposProjetos:"Banheiros, cozinhas e pisos internos", disponibilidade:"Seg a Sex", regiao:"Centro, São Paulo", obs:"(exemplo)", fazReformasCompletas:false, servicos:["piso","revest","rodape"], exemplo:true, criadoEm:new Date().toISOString(), atualizadoEm:new Date().toISOString() },
+      { id:"pro-ex3", nome:"Carlos Hidráulica", tel:"(11) 90000-0003", especialidade:"encanador", habilidades:["Instalação hidráulica","Manutenção de tubulações","Instalação de torneiras","Instalação de vasos sanitários","Identificação de vazamentos"], experienciaAnos:10, descricaoTrabalhos:"Serviços hidráulicos residenciais (exemplo).", tiposProjetos:"Banheiros e cozinhas", disponibilidade:"Comercial", regiao:"Zona Leste, São Paulo", obs:"(exemplo)", fazReformasCompletas:false, servicos:["hidraulica"], exemplo:true, criadoEm:new Date().toISOString(), atualizadoEm:new Date().toISOString() }
+    ];
+    save();
 }
+if (typeof migrarDadosProfissionais === "function") { migrarDadosProfissionais(); save(); }
 go("inicio");

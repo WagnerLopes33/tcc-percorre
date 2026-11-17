@@ -1187,3 +1187,34 @@ input.pago {
     }
 
 }
+
+/* ===== Profissionais: busca, recomendações e atendimento ===== */
+.pro-page-note { font-size: 13px; color: var(--suave); }
+.reco-group { border: 1px solid var(--linha); border-radius: 14px; padding: 14px; background: var(--papel); }
+.reco-group h3 { margin-bottom: 10px; }
+.reco-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill,minmax(280px,1fr)); }
+.pro-card { border: 1px solid var(--linha-forte); border-radius: 14px; padding: 14px; background: #fff; display:flex; flex-direction:column; gap:8px; }
+.pro-card .head { display:flex; justify-content:space-between; gap:10px; align-items:flex-start; }
+.score-pill { font-weight: 700; border-radius: 999px; padding: 4px 10px; font-size: 13px; white-space:nowrap; }
+.score-alta { background: var(--verde-claro); color: var(--verde-ok); }
+.score-parcial { background: var(--atencao-claro); color: var(--atencao); }
+.score-confirmar { background: #E8EEF7; color: #1F3A6B; }
+.motivos { margin: 0; padding-left: 18px; color: var(--suave); font-size: 13px; }
+.motivos li { margin: 2px 0; }
+.tag-row { display:flex; flex-wrap:wrap; gap:6px; }
+.tag { background: var(--fundo); border:1px solid var(--linha); border-radius:999px; padding:2px 8px; font-size:12px; }
+.assist-chat { margin-top: 16px; border: 1px solid var(--linha-forte); border-radius: 14px; padding: 12px; background: var(--fundo); display:flex; flex-direction:column; gap:10px; }
+.chat-log { max-height: 320px; overflow:auto; display:flex; flex-direction:column; gap:8px; padding:4px; }
+.msg { padding:10px 12px; border-radius:12px; max-width: 92%; white-space:pre-wrap; }
+.msg.bot { background:#fff; border:1px solid var(--linha); align-self:flex-start; }
+.msg.user { background: var(--laranja-claro); color: var(--floresta); align-self:flex-end; }
+.chat-form { display:flex; gap:8px; }
+.chat-form input { flex:1; }
+.solicitacao-card { border:1px solid var(--linha); border-radius:12px; padding:12px; background:#fff; }
+textarea { width:100%; min-height:80px; padding:10px 12px; border:1px solid var(--linha-forte); border-radius:12px; font:15px var(--sans); color:var(--floresta); resize:vertical; }
+textarea:focus { outline:none; border-color:var(--laranja); box-shadow:0 0 0 4px var(--laranja-claro); }
+select[multiple] { min-height: 120px; padding: 8px; }
+.small-note { font-size:12.5px; color: var(--suave); }
+.warn-box { background: var(--atencao-claro); color: var(--atencao); border-radius: 10px; padding: 10px 12px; font-size: 13px; }
+.necessidade-bloco { border-top:1px dashed var(--linha-forte); padding-top:12px; margin-top:8px; }
+@media(max-width:700px){ .chat-form{flex-direction:column;} .pro-card .head{flex-direction:column;} }
