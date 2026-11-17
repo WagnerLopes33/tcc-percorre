@@ -1,6 +1,21 @@
 {
   "name": "obrinha",
   "private": true,
-  "scripts": { "start": "node server.mjs", "test": "node --test" },
-  "engines": { "node": ">=18.18" }
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test"
+     
+  },
+  "engines": {
+    "node": ">=18.18"
+  },
+  "version": "1.0.0",
+  "description": "O menu **Pesquisar preços** e os links na tela de resultado abrem `precos.html`.\r O backend usa a [SerpApi / Google Shopping](https://serpapi.com/shopping-results), um serviço externo que exige conta e chave para consultas reais. Confira as condições e a cota do seu plano.",
+  "main": "calculadora.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.3.0"
+  }
 }
