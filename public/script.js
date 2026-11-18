@@ -272,7 +272,7 @@ function passo(n) {
 }
 const views = ["inicio", "novaobra", "obra", "comodo", "resultado", "gastos", "profissionais"];
 let hist = [], viewAtual = "inicio";
-function go(v, back) {
+function go(v, back, { focusContent = true } = {}) {
     if (! back && viewAtual !== v) hist.push( {
         v: viewAtual, modo: atual.modo, etapa: atual.etapa
     });
@@ -298,9 +298,7 @@ function go(v, back) {
     }))();
     montarInfos();
     window.scrollTo(0, 0);
-    $("#app").focus( {
-        preventScroll: true
-    });
+    if (focusContent) $("#app").focus({ preventScroll: true });
 }
 $("#btn-back").onclick =() => {
     if (viewAtual === "comodo" && atual.etapa > 1) {
@@ -1316,4 +1314,4 @@ if (!mem.pros) {
     save();
 }
 if (typeof migrarDadosProfissionais === "function") { migrarDadosProfissionais(); save(); }
-go("inicio");
+go("inicio", false, { focusContent: false });
