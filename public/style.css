@@ -1161,6 +1161,102 @@ input.pago {
     background: var(--laranja-bg);
 }
 
+.prices-bar .logo {
+    text-decoration: none;
+}
+
+.prices-bar [aria-current="page"] {
+    background: var(--laranja-bg);
+}
+
+.prices-hero {
+    grid-template-columns: minmax(0, 1fr) 224px;
+    min-height: 224px;
+    padding-block: 24px;
+}
+
+.prices-hero p {
+    max-width: 54ch;
+}
+
+.prices-hero svg {
+    justify-self: center;
+}
+
+.prices-fields,
+.prices-grid {
+    display: grid;
+    gap: 16px;
+}
+
+.prices-fields {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+}
+
+.prices-actions {
+    justify-content: space-between;
+}
+
+.prices-grid {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 270px), 1fr));
+}
+
+.prices-status {
+    padding: 12px 16px;
+    border-radius: var(--r);
+    background: var(--verde-claro);
+}
+
+.prices-status.is-error {
+    color: var(--erro);
+    background: var(--erro-claro);
+}
+
+.prices-status:empty,
+#price-results:empty {
+    display: none;
+}
+
+.price-offer {
+    overflow-wrap: anywhere;
+}
+
+.price-offer .badge,
+.price-offer .btn {
+    align-self: flex-start;
+}
+
+.price-offer .field {
+    margin-top: auto;
+}
+
+.price-subtotal {
+    border-top: 1px solid var(--linha);
+    padding-top: 12px;
+    font-weight: 700;
+}
+
+@media (max-width: 900px) {
+    .prices-hero {
+        grid-template-columns: 1fr;
+        min-height: auto;
+    }
+
+    .prices-hero::after {
+        opacity: .12;
+    }
+}
+
+@media (max-width: 600px) {
+    .prices-fields {
+        grid-template-columns: 1fr;
+    }
+
+    .prices-actions > button {
+        width: 100%;
+    }
+}
+
 @media (max-width: 700px) {
     .bar {
         flex-wrap: wrap;

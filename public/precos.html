@@ -1,16 +1,103 @@
 <!doctype html>
 <html lang="pt-BR">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pesquisar materiais — Obrinha</title><link rel="stylesheet" href="style.css"><script src="precos.js" defer></script></head>
-<body><main class="stack" style="max-width:1100px;margin:32px auto;padding:20px">
-<a href="index.html">← Voltar à Obrinha</a>
-<div><h1>Pesquisar preços de materiais</h1><p>Compare anúncios e confira a embalagem antes de estimar sua compra.</p></div>
-<form id="search-prices" class="card stack">
-<label class="lbl" for="query">Material, marca e embalagem</label>
-<input id="query" required minlength="5" maxlength="160" value="Argamassa AC-II 20 kg" placeholder="Ex.: Argamassa AC-II 20 kg">
-<p class="small muted">Inclua tipo, medida e quantidade da embalagem para refinar os resultados. Pesquisa no Brasil; estoque e entrega para seu CEP devem ser conferidos na loja.</p>
-<button class="btn btn-primary" id="search-button">Pesquisar ofertas</button>
-</form>
-<p id="price-status" role="status" aria-live="polite"></p>
-<div id="price-results" class="stack"></div>
-<p class="small muted">Os valores desta pesquisa não alteram automaticamente o orçamento da obra. Preços podem mudar; frete, disponibilidade, rendimento e adequação precisam ser confirmados.</p>
-</main></body></html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Pesquisar preços — Obrinha</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="style.css">
+    <script src="precos.js" defer></script>
+</head>
+<body>
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+            <symbol id="dico" viewBox="0 0 600 600">
+                <g stroke="#3A2618" stroke-width="7" stroke-linejoin="round" stroke-linecap="round">
+                    <ellipse cx="445" cy="470" rx="105" ry="52" transform="rotate(-28 445 470)" fill="#6B4429"/>
+                    <ellipse cx="240" cy="545" rx="48" ry="22" fill="#6B4429"/>
+                    <ellipse cx="360" cy="545" rx="48" ry="22" fill="#6B4429"/>
+                    <ellipse cx="300" cy="420" rx="140" ry="130" fill="#8A5A3C"/>
+                    <ellipse cx="300" cy="445" rx="88" ry="92" fill="#E9C9A3"/>
+                    <rect x="166" y="428" width="268" height="34" rx="17" fill="#3DBE6E"/>
+                    <rect x="284" y="424" width="32" height="42" rx="7" fill="#FF7A1A"/>
+                    <rect x="360" y="456" width="46" height="42" rx="11" fill="#FF7A1A"/>
+                    <ellipse cx="165" cy="345" rx="28" ry="52" transform="rotate(-35 165 345)" fill="#8A5A3C"/>
+                    <ellipse cx="432" cy="395" rx="26" ry="48" transform="rotate(28 432 395)" fill="#8A5A3C"/>
+                    <circle cx="196" cy="142" r="32" fill="#8A5A3C"/>
+                    <circle cx="404" cy="142" r="32" fill="#8A5A3C"/>
+                    <circle cx="300" cy="232" r="126" fill="#8A5A3C"/>
+                    <path d="M182 178 Q300 34 418 178 Z" fill="#FF7A1A"/>
+                    <rect x="160" y="166" width="280" height="30" rx="15" fill="#FF7A1A"/>
+                    <ellipse cx="300" cy="290" rx="72" ry="54" fill="#E9C9A3"/>
+                    <ellipse cx="300" cy="262" rx="23" ry="15" fill="#3A2618"/>
+                    <path d="M300 277 V292 M270 296 Q300 316 330 296" fill="none"/>
+                    <rect x="285" y="304" width="30" height="32" rx="6" fill="#FFFCF7"/>
+                </g>
+                <circle cx="254" cy="220" r="17" fill="#3A2618"/>
+                <circle cx="346" cy="220" r="17" fill="#3A2618"/>
+                <circle cx="260" cy="213" r="6" fill="#FFFCF7"/>
+                <circle cx="352" cy="213" r="6" fill="#FFFCF7"/>
+                <ellipse cx="222" cy="268" rx="19" ry="11" fill="#FF9E7A" opacity=".65"/>
+                <ellipse cx="378" cy="268" rx="19" ry="11" fill="#FF9E7A" opacity=".65"/>
+            </symbol>
+            <symbol id="icone" viewBox="0 0 256 256">
+                <rect width="256" height="256" rx="64" fill="#FF7A1A"/>
+                <g stroke="#133A2C" stroke-width="6" stroke-linejoin="round">
+                    <circle cx="80" cy="92" r="18" fill="#8A5A3C"/>
+                    <circle cx="176" cy="92" r="18" fill="#8A5A3C"/>
+                    <circle cx="128" cy="140" r="70" fill="#8A5A3C"/>
+                    <path d="M66 110 Q128 30 190 110 Z" fill="#FFF5EA"/>
+                    <rect x="54" y="102" width="148" height="18" rx="9" fill="#FFF5EA"/>
+                    <ellipse cx="128" cy="172" rx="40" ry="30" fill="#E9C9A3"/>
+                    <ellipse cx="128" cy="157" rx="13" ry="9" fill="#133A2C"/>
+                    <rect x="119" y="178" width="18" height="20" rx="4" fill="#FFFCF7"/>
+                </g>
+                <circle cx="104" cy="136" r="9" fill="#133A2C"/>
+                <circle cx="152" cy="136" r="9" fill="#133A2C"/>
+            </symbol>
+        </svg>
+    <header>
+        <div class="bar prices-bar">
+            <a class="logo" href="index.html" aria-label="Obrinha, ir para o início">
+                <svg width="34" height="34" aria-hidden="true"><use href="#icone"/></svg>
+                <span>obrinha</span>
+            </a>
+            <nav class="top" aria-label="Principal">
+                <a class="quick-link" href="index.html">Início</a>
+                <a class="quick-link" href="calculadora.html">Cálculo rápido</a>
+                <a class="quick-link" href="precos.html" aria-current="page">Pesquisar preços</a>
+            </nav>
+        </div>
+    </header>
+    <main id="app" class="prices-page stack">
+        <section class="hero prices-hero" aria-labelledby="prices-title">
+            <div class="stack">
+                <h1 id="prices-title">Pesquisar preços de materiais</h1>
+                <p>Compare ofertas dos materiais usados nos cálculos da Obrinha e confira a embalagem antes de comprar.</p>
+            </div>
+            <svg viewBox="0 0 600 600" width="184" height="184" aria-hidden="true"><use href="#dico"/></svg>
+        </section>
+        <form id="search-prices" class="card stack">
+            <h2>Qual material você procura?</h2>
+            <div class="prices-fields">
+                <div class="field">
+                    <label class="lbl" for="category">Categoria do material</label>
+                    <select id="category" name="categoria" required disabled>
+                        <option value="">Selecione uma categoria</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label class="lbl" for="details">Detalhes <span class="small muted">(opcional)</span></label>
+                    <input id="details" name="detalhes" maxlength="80" placeholder="Marca, tipo, medida ou embalagem">
+                </div>
+            </div>
+            <div class="row prices-actions">
+                <p class="small muted">Confira o estoque, a unidade do preço e o frete para seu CEP na loja.</p>
+                <button class="btn btn-primary" id="search-button" type="submit" disabled>Pesquisar ofertas</button>
+            </div>
+        </form>
+        <p id="price-status" class="prices-status" role="status" aria-live="polite"></p>
+        <section id="price-results" class="stack" aria-label="Resultados da pesquisa"></section>
+        <p class="small muted">Os preços encontrados servem para comparação. O orçamento da obra usa os valores do catálogo ilustrativo.</p>
+    </main>
+</body>
+</html>

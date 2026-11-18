@@ -25,7 +25,7 @@ Use `npm ci` como comando de build e `npm start` como comando de inicialização
 
 ### Como funciona a pesquisa
 
-- Busca de anúncios no Brasil por descrição, marca e embalagem, com preço, loja, link e data da consulta. Os links podem abrir páginas de produto no Google Shopping.
+- Busca de anúncios no Brasil por categoria obrigatória dos materiais da Obrinha. Marca, tipo, medida e embalagem são opcionais. O servidor valida a categoria e filtra os títulos dos anúncios pelo material escolhido e por termos de ferramentas, acessórios e produtos fora do escopo.
 - Cache em memória por 30 minutos, limite de 100 pesquisas armazenadas e intervalo mínimo de 3 segundos entre novas consultas. Reiniciar o servidor limpa o cache.
 - Ordenação pelo preço anunciado e destaque do menor, do maior e da oferta central da amostra. Em amostras pares, destaca a oferta central inferior. Isso não classifica a qualidade dos produtos.
 - Quantidade inteira de embalagens informada pelo usuário para calcular o subtotal sem frete.
