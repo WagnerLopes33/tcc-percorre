@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createServer, normalize } from './server.mjs';
+import { createServer, normalize } from './server.js';
 
 test('normaliza ofertas, remove preços inválidos, usados, duplicados e links inseguros', () => {
   const offer = { title: 'Argamassa 20 kg', source: 'Loja', extracted_price: 30, product_link: 'https://example.com/item' };
@@ -20,7 +20,7 @@ async function running(t, options) {
 }
 
 test('modo demo explícito, cache e arquivos privados protegidos', async t => {
-  const base = await running(t, { key: '' });
+  const base = await running(t, { key: '', allowDemo: true });
   const first = await (await fetch(`${base}/api/precos?q=argamassa`)).json();
   assert.equal(first.demo, true);
   assert.equal(first.offers.length, 3);
@@ -29,7 +29,7 @@ test('modo demo explícito, cache e arquivos privados protegidos', async t => {
   assert.equal(second.cached, true);
   assert.equal(second.updatedAt, first.updatedAt);
   assert.equal((await fetch(`${base}/.env`)).status, 404);
-  assert.equal((await fetch(`${base}/server.mjs`)).status, 404);
+  assert.equal((await fetch(`${base}/server.js`)).status, 404);
   assert.equal((await fetch(`${base}/api/precos?q=x`)).status, 400);
 });
 
@@ -52,4 +52,15 @@ test('ofertas reais preservam origem e falhas não viram demonstração', async 
   assert.equal(data.demo, false);
   assert.equal(data.offers[0].price, 42);
   assert.equal(data.source, 'SerpApi / Google Shopping');
+});
+
+test('Express serve a interface e a API, com erro quando falta a chave em produção', async t => {
+  const base = await running(t, { key: '', allowDemo: false });
+  assert.equal((await fetch(base)).status, 200);
+  assert.match(await (await fetch(base + '/precos.html')).text(), /search-prices/);
+  const status = await (await fetch(base + '/api/status')).json();
+  assert.equal(status.status, 'online');
+  const response = await fetch(base + '/api/precos?q=argamassa');
+  assert.equal(response.status, 503);
+  assert.match((await response.json()).error, /SERPAPI_API_KEY/);
 });

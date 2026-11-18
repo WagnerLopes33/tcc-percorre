@@ -1,6 +1,6 @@
 # Obrinha
 
-## Pesquisa de preços — integração experimental
+## Pesquisa de preços
 
 O menu **Pesquisar preços** e os links na tela de resultado abrem `precos.html`.
 O backend usa a [SerpApi / Google Shopping](https://serpapi.com/shopping-results), um serviço externo que exige conta e chave para consultas reais. Confira as condições e a cota do seu plano.
@@ -8,18 +8,22 @@ O backend usa a [SerpApi / Google Shopping](https://serpapi.com/shopping-results
 ### Executar
 
 1. Instale Node.js (mínimo compatível: 18.18; recomendado: versão LTS atual). O servidor carrega `.env` diretamente, sem exigir opções especiais do Node.
-2. No terminal da pasta do projeto, execute `npm start`.
+2. No terminal da pasta do projeto, execute `npm ci` e depois `npm start`.
 3. Abra `http://localhost:3000` e clique em **Pesquisar preços**.
 
 Sem chave, a pesquisa retorna três ofertas **fictícias**, identificadas como demonstração. Para ativar a consulta real:
 
-1. Copie `.env.example` para `.env`.
-2. Preencha `SERPAPI_API_KEY` com sua chave. Não coloque a chave nos arquivos HTML ou JavaScript do navegador.
+1. Crie um arquivo `.env` na raiz do projeto.
+2. Adicione `SERPAPI_API_KEY=sua_chave`. Não coloque a chave nos arquivos HTML ou JavaScript do navegador.
 3. Reinicie `npm start`.
 
-Não é necessário instalar dependências npm. `.env` está ignorado pelo Git e não é servido pelo backend. O servidor atende somente no próprio computador (`127.0.0.1`).
+`.env` está ignorado pelo Git e fica fora da pasta pública.
 
-### Escopo deste teste
+### Render
+
+Use `npm ci` como comando de build e `npm start` como comando de inicialização. Configure `SERPAPI_API_KEY` nas variáveis de ambiente do serviço e publique a nova versão. O Express usa a porta fornecida em `PORT` e serve o site e a API no mesmo domínio. Se a chave estiver ausente no Render ou com `NODE_ENV=production`, a busca retorna HTTP 503.
+
+### Como funciona a pesquisa
 
 - Busca de anúncios no Brasil por descrição, marca e embalagem, com preço, loja, link e data da consulta. Os links podem abrir páginas de produto no Google Shopping.
 - Cache em memória por 30 minutos, limite de 100 pesquisas armazenadas e intervalo mínimo de 3 segundos entre novas consultas. Reiniciar o servidor limpa o cache.
@@ -39,7 +43,7 @@ Aplicação de TCC para planejar pequenas reformas, estimar materiais e acompanh
 
 ## Como abrir
 
-Abra `index.html` no navegador ou use a extensão Live Server no VS Code. Não há instalação de dependências nem etapa de compilação.
+Execute `npm ci` e `npm start` na raiz do projeto e abra `http://localhost:3000`.
 
 ## Arquivos
 
@@ -66,10 +70,10 @@ A aba Profissionais permite cadastrar contatos, filtrar por serviço e acessar o
 
 ## Dados e estimativas
 
-- Obras, compras e contatos ficam no `localStorage` deste navegador, na chave `obrinha:v2`. Não há servidor, conta ou sincronização entre dispositivos.
+- Obras, compras e contatos ficam no `localStorage` deste navegador, na chave `obrinha:v2`. Esses dados ficam no dispositivo em que foram registrados.
 - A primeira abertura cria uma obra de demonstração. Depois de excluída, ela não é recriada automaticamente.
 - Limpar os dados do navegador pode apagar os registros. Use **Exportar resumo**, em Meus gastos, para baixar um resumo em texto; esse arquivo não é um backup importável.
-- Os preços e produtos são exemplos fornecidos no protótipo, sem consulta a preços atuais de lojas.
+- O orçamento usa o catálogo ilustrativo. A tela Pesquisar preços consulta as ofertas anunciadas no Google Shopping.
 - Consumos, perdas e rendimentos são hipóteses do protótipo. Confira a embalagem, as condições da superfície e a adequação do produto antes da compra.
 - O cômodo é tratado como retangular. Para áreas irregulares, divida em partes e cadastre separadamente.
 - As fontes do Google precisam de internet; fontes alternativas são usadas quando indisponíveis.
