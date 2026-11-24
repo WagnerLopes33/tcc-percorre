@@ -72,3 +72,23 @@ footer.site{max-width:none;margin:56px 0 0;padding:0;background:var(--floresta);
 .atalho-hero img{height:170px;width:auto;position:relative;z-index:1;margin:-20px 0 -40px}
 .atalho-hero::after{content:"";position:absolute;right:-60px;top:-60px;width:300px;height:300px;border-radius:50%;background:var(--laranja)}
 @media(max-width:600px){.atalho-hero img{display:none}.atalho-hero{padding:24px}}
+
+.quick-navigation .quick-page-link {
+    display: inline-flex;
+    align-items: center;
+    padding: 9px 14px;
+    border-radius: 10px;
+    color: var(--suave);
+    font: 600 14px var(--sans);
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.quick-navigation .quick-page-link:hover {
+    background: var(--fundo);
+    color: var(--floresta);
+}
+
+@media (max-width: 600px) {
+    .quick-navigation .quick-page-link { padding: 8px 10px; font-size: 13px; }
+}

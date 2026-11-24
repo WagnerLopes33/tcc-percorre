@@ -1193,28 +1193,6 @@ input.pago {
     background: var(--laranja-bg);
 }
 
-.prices-bar .logo {
-    text-decoration: none;
-}
-
-.prices-bar [aria-current="page"] {
-    background: var(--laranja-bg);
-}
-
-.prices-hero {
-    grid-template-columns: minmax(0, 1fr) 224px;
-    min-height: 224px;
-    padding-block: 24px;
-}
-
-.prices-hero p {
-    max-width: 54ch;
-}
-
-.prices-hero svg {
-    justify-self: center;
-}
-
 .prices-fields,
 .prices-grid {
     display: grid;
@@ -1266,17 +1244,6 @@ input.pago {
     border-top: 1px solid var(--linha);
     padding-top: 12px;
     font-weight: 700;
-}
-
-@media (max-width: 900px) {
-    .prices-hero {
-        grid-template-columns: 1fr;
-        min-height: auto;
-    }
-
-    .prices-hero::after {
-        opacity: .12;
-    }
 }
 
 @media (max-width: 600px) {
