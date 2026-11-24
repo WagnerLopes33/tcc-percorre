@@ -2,6 +2,7 @@ const express = require('express');
 const { readFileSync } = require('node:fs');
 const { createServer: createHttpServer } = require('node:http');
 const { join } = require('node:path');
+const { mountAccounts } = require('./accounts');
 
 const priceCategories = {
   tinta: { label: 'Tinta acrílica', example: 'Suvinil branco 18 L', title: /\btintas? acrilicas?\b/ },
@@ -36,13 +37,14 @@ function normalize(items) {
   }).sort((a, b) => a.price - b.price);
 }
 
-function createServer({ key = process.env.SERPAPI_API_KEY, fetcher = fetch, allowDemo = process.env.NODE_ENV !== 'production' && process.env.RENDER !== 'true' } = {}) {
+function createServer({ key = process.env.SERPAPI_API_KEY, fetcher = fetch, allowDemo = process.env.NODE_ENV !== 'production' && process.env.RENDER !== 'true', dataFile } = {}) {
   const app = express();
   const cache = new Map();
   let nextSearch = 0;
 
   app.use(express.json());
   app.use(express.static(join(__dirname, 'public')));
+  mountAccounts(app, dataFile);
 
   app.get('/api/status', (req, res) => {
     res.json({ status: 'online', mensagem: 'API funcionando!' });

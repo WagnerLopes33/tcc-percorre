@@ -1,4 +1,12 @@
-# Obrinha
+# Dico
+
+## Contas e avaliações
+
+Em **Minha conta**, crie um perfil de cliente ou profissional. Para testar o fluxo completo, use dois perfis de navegador e crie uma conta em cada um. No perfil de cliente, crie uma obra e use **Vincular profissional** para enviar o convite. No painel profissional, aceite. Quando o serviço terminar, finalize o projeto no painel do cliente. Cada participante poderá enviar uma avaliação de 1 a 5 estrelas.
+
+O planejamento da obra e os gastos ficam no navegador. O servidor salva as contas, sessões, vínculos e avaliações em `.dico/dados.json`. Em uma hospedagem com sistema de arquivos temporário, configure `DICO_DATA_FILE` com o caminho de um arquivo em volume persistente. Esse armazenamento usa uma única instância do servidor.
+
+O VLibras é carregado do serviço oficial e requer acesso à internet.
 
 ## Pesquisa de preços
 
@@ -25,7 +33,7 @@ Use `npm ci` como comando de build e `npm start` como comando de inicialização
 
 ### Como funciona a pesquisa
 
-- Busca de anúncios no Brasil por categoria obrigatória dos materiais da Obrinha. Marca, tipo, medida e embalagem são opcionais. O servidor valida a categoria e filtra os títulos dos anúncios pelo material escolhido e por termos de ferramentas, acessórios e produtos fora do escopo.
+- Busca de anúncios no Brasil por categoria obrigatória dos materiais do Dico. Marca, tipo, medida e embalagem são opcionais. O servidor valida a categoria e filtra os títulos dos anúncios pelo material escolhido e por termos de ferramentas, acessórios e produtos fora do escopo.
 - Cache em memória por 30 minutos, limite de 100 pesquisas armazenadas e intervalo mínimo de 3 segundos entre novas consultas. Reiniciar o servidor limpa o cache.
 - Ordenação pelo preço anunciado e destaque do menor, do maior e da oferta central da amostra. Em amostras pares, destaca a oferta central inferior. Isso não classifica a qualidade dos produtos.
 - Quantidade inteira de embalagens informada pelo usuário para calcular o subtotal sem frete.

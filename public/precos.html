@@ -3,7 +3,9 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Pesquisar preços — Obrinha</title>
+    <title>Pesquisar preços — Dico</title>
+    <link rel="icon" href="assets/dico_icone_app.png">
+    <script src="vlibras.js" defer></script>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" href="style.css">
     <script src="precos.js" defer></script>
@@ -57,24 +59,25 @@
         </svg>
     <header>
         <div class="bar prices-bar">
-            <a class="logo" href="index.html" aria-label="Obrinha, ir para o início">
-                <svg width="34" height="34" aria-hidden="true"><use href="#icone"/></svg>
-                <span>obrinha</span>
+            <a class="logo" href="index.html" aria-label="Dico, ir para o início">
+                    <img src="assets/dico_icone_app.png" alt="" width="36" height="36">
+                <span>Dico</span>
             </a>
             <nav class="top" aria-label="Principal">
                 <a class="quick-link" href="index.html">Início</a>
                 <a class="quick-link" href="calculadora.html">Cálculo rápido</a>
                 <a class="quick-link" href="precos.html" aria-current="page">Pesquisar preços</a>
-            </nav>
+            <a class="quick-link account-link" href="conta.html">Minha conta</a>
+                </nav>
         </div>
     </header>
     <main id="app" class="prices-page stack">
         <section class="hero prices-hero" aria-labelledby="prices-title">
             <div class="stack">
                 <h1 id="prices-title">Pesquisar preços de materiais</h1>
-                <p>Compare ofertas dos materiais usados nos cálculos da Obrinha e confira a embalagem antes de comprar.</p>
+                <p>Compare ofertas dos materiais usados nos cálculos do Dico e confira a embalagem antes de comprar.</p>
             </div>
-            <svg viewBox="0 0 600 600" width="184" height="184" aria-hidden="true"><use href="#dico"/></svg>
+            <img src="assets/dico_calculando_orcamento.png" width="184" height="184" class="dico-spot" alt="">
         </section>
         <form id="search-prices" class="card stack">
             <h2>Qual material você procura?</h2>

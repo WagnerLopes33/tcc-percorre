@@ -345,7 +345,7 @@ function onSubmit(sel, fn) {
 function renderInicio() {
     const el = $("#lista-obras");
     if (! mem.obras.length) {
-        el.innerHTML = `<div class="card empty" style="grid-column:1/-1"><svg width="110" height="110" aria-hidden="true"><use href="#dico"/></svg><h3>Ainda não tem obra.</h3><p class="muted">Vamos começar? O Dico ajuda em cada passo.</p></div>`;
+        el.innerHTML = `<div class="card empty" style="grid-column:1/-1"><img src="assets/dico_pensativo.png" alt="" class="dico-spot" width="110" height="110"><h3>Ainda não tem obra.</h3><p class="muted">Vamos começar? O Dico ajuda em cada passo.</p></div>`;
         return
     }
     el.innerHTML = mem.obras.map(o => {
@@ -400,12 +400,12 @@ function nomeTipo(c) {
 function renderObra() {
     const o = obraAtual(), el = $("#v-obra");
     el.innerHTML = `<div class="row between"><div><span class="eyebrow">Minha obra</span><h1>${esc(o.nome)}</h1></div>
- <div class="row"><button class="btn btn-sec" type="button" data-go="gastos">Ver gastos</button><button class="btn btn-primary" type="button" id="btn-comodo">+ Adicionar cômodo</button></div></div>
+ <div class="row"><a class="btn btn-sec" href="conta.html?obra=${encodeURIComponent(o.id)}">Vincular profissional</a><button class="btn btn-sec" type="button" data-go="gastos">Ver gastos</button><button class="btn btn-primary" type="button" id="btn-comodo">+ Adicionar cômodo</button></div></div>
  ${o.comodos.length?`<div class="grid">${o.comodos.map(c=>`<div class="card stack" style="gap:12px"><div class="row between"><div><p class="muted small">${esc(nomeTipo(c))}</p><h3>${esc(c.nome)}</h3></div>${c.concluido?`<span class="badge b-ok">Concluído</span>`:`<span class="badge b-or">Em andamento</span>`}</div>
  <div class="row" style="gap:6px">${c.servicos.map(s=>`<span class="badge b-neu">${SERVNOME[s]}</span>`).join("")}</div>
  ${c.resultado?`<p class="num" style="font-weight:700">${brl(c.resultado.total)} <span class="muted small" style="font-weight:500">em material</span></p>`:""}
  <button class="btn btn-sec" type="button" data-ver="${c.id}">Ver materiais</button></div>`).join("")}</div>`
- :`<div class="card empty"><svg width="110" height="110" aria-hidden="true"><use href="#dico"/></svg><h3>Ainda não tem cômodo.</h3><p class="muted">Vamos medir o primeiro?</p></div>`}
+ :`<div class="card empty"><img src="assets/dico_pensativo.png" alt="" class="dico-spot" width="110" height="110"><h3>Ainda não tem cômodo.</h3><p class="muted">Vamos medir o primeiro?</p></div>`}
  <div><button class="btn-ghost" type="button" id="btn-excluir">Excluir esta obra</button></div>`;
     $("#btn-comodo").onclick = novoComodo;
     el.querySelectorAll("[data-ver]").forEach(b => b.onclick =() => {
@@ -782,7 +782,7 @@ document.addEventListener("change", e => {
     toast(isFinite(v) && v > 0 ? "Valor pago salvo.": "Valor pago removido.")
 });
 function exportar(o) {
-    const L = [`Obrinha – ${o.nome}`, `Orçamento: ${o.orcamento?brl(o.orcamento):"não definido"} · Gasto: ${brl(gasto(o))}`, "", ...o.comodos.filter(c => c.resultado).flatMap(c => [`${c.nome}: ${brl(c.resultado.total)}`, ...c.resultado.itens.map(i => {
+    const L = [`Dico – ${o.nome}`, `Orçamento: ${o.orcamento?brl(o.orcamento):"não definido"} · Gasto: ${brl(gasto(o))}`, "", ...o.comodos.filter(c => c.resultado).flatMap(c => [`${c.nome}: ${brl(c.resultado.total)}`, ...c.resultado.itens.map(i => {
         const s = i.ops.find(x => x.id === i.sel);
         return `  - ${NOMEMAT[i.cat]}: ${s.texto} (${s.nome}) ${brl(s.custo)}`
     })]), "", "Compras:", ...o.compras.map(x => `  ${x.data} · ${x.item} · ${brl(x.valor)}`)];
@@ -790,7 +790,7 @@ function exportar(o) {
     a.href = URL.createObjectURL(new Blob([L.join("\n")],  {
         type: "text/plain"
     }));
-    a.download = `obrinha-${o.nome.replace(/\W+/g,"-").toLowerCase()}.txt`;
+    a.download = `dico-${o.nome.replace(/\W+/g,"-").toLowerCase()}.txt`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
     toast("Resumo baixado.");
@@ -799,7 +799,7 @@ function exportar(o) {
 const telDig = t => String(t || "").replace(/\D/g, "");
 function servicoBuscaNome(id){ const f = (typeof SERVICOS_BUSCA !== "undefined" ? SERVICOS_BUSCA : []).find(x => x[0] === id); return f ? f[1] : id; }
 function espNome(id){ return (typeof ESPECIALIDADES !== "undefined" && ESPECIALIDADES[id] && ESPECIALIDADES[id].nome) || id || "Não informada"; }
-function waLink(tel, texto){ const d = telDig(tel); return d ? ("https://wa.me/55" + d + "?text=" + encodeURIComponent(texto || "Olá! Vi seu contato na Obrinha e gostaria de conversar sobre um serviço.")) : ""; }
+function waLink(tel, texto){ const d = telDig(tel); return d ? ("https://wa.me/55" + d + "?text=" + encodeURIComponent(texto || "Olá! Vi seu contato no Dico e gostaria de conversar sobre um serviço.")) : ""; }
 function copiarTexto(t, okMsg){ (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast(okMsg || "Copiado."), () => toast("Não foi possível copiar automaticamente.")); }
 function pedidoDeServicosComodo(servs){ return (servs || []).map(x => (typeof MAPA_SERVICO_COMODO !== "undefined" && MAPA_SERVICO_COMODO[x]) || x); }
 function prosPara(servs){
@@ -814,7 +814,7 @@ function prosPara(servs){
 function resumoSolicitacaoTexto(sol){
   const ped = sol.pedido || {}; const f = sol.ficha || {};
   return [
-    "Obrinha - Solicitação de atendimento",
+    "Dico - Solicitação de atendimento",
     "Criada em: " + new Date(sol.criadoEm || Date.now()).toLocaleString("pt-BR"),
     "Status: " + (sol.status || "em andamento"),
     "",
@@ -832,7 +832,7 @@ function resumoSolicitacaoTexto(sol){
 }
 
 function cardAcoesContato(pro, pedido){
-  const msg = "Olá! Vi seu contato na Obrinha e gostaria de conversar sobre: " + ((pedido && pedido.descricao) || "um serviço de reforma") + ".";
+  const msg = "Olá! Vi seu contato no Dico e gostaria de conversar sobre: " + ((pedido && pedido.descricao) || "um serviço de reforma") + ".";
   if (pro.exemplo) return '<span class="muted small">Contato fictício para demonstração.</span>';
   return '<div class="row" style="gap:8px"><a class="btn btn-primary" style="min-height:40px;padding:0 14px" href="' + waLink(pro.tel, msg) + '" target="_blank" rel="noopener">Conversar pelo WhatsApp</a><button class="btn btn-sec" style="min-height:40px;padding:0 14px" type="button" data-copiar="' + esc(pro.tel || "") + '">Copiar contato</button></div>';
 }
@@ -908,7 +908,7 @@ function iniciarAssistente(prefill){
     mensagens: []
   };
   box.hidden = false; renderAssistente();
-  addBotMsg("Olá! Sou o assistente da Obrinha. Vou ajudar você a encontrar o profissional ideal para sua reforma. Conte um pouco sobre o que está planejando!");
+  addBotMsg("Olá! Sou o assistente do Dico. Vou ajudar você a encontrar o profissional ideal para sua reforma. Conte um pouco sobre o que está planejando!");
   if (assistState.dados.descricao) addBotMsg("Recebi uma descrição inicial. Se quiser, complemente com mais detalhes ou responda às perguntas para eu organizar sua solicitação.");
 }
 function addMsg(de, texto){ if (!assistState) return; assistState.mensagens.push({ de, texto, em: new Date().toISOString() }); renderAssistente(); }
@@ -1017,7 +1017,7 @@ function renderAssistente(mostrarFicha){
   }
   const pergunta = !assistState.finalizado ? assistPerguntaAtual() : null;
   const hint = !assistState.finalizado ? (pergunta ? textoPergunta(pergunta) : 'Se quiser, acrescente referências ou preferências. Quando estiver pronto, clique em "Organizar solicitação".') : "Solicitação organizada e salva localmente. Você pode revisar, copiar ou encaminhar com sua confirmação.";
-  box.innerHTML = '<div class="row between"><h3 style="margin:0">Atendimento da Obrinha</h3><span class="badge b-neu">' + ((typeof CONFIG_ATENDIMENTO !== "undefined" && CONFIG_ATENDIMENTO.iaHabilitada) ? "Assistente IA configurado" : "Assistente local (sem IA externa)") + '</span></div>' +
+  box.innerHTML = '<div class="row between"><h3 style="margin:0">Atendimento do Dico</h3><span class="badge b-neu">' + ((typeof CONFIG_ATENDIMENTO !== "undefined" && CONFIG_ATENDIMENTO.iaHabilitada) ? "Assistente IA configurado" : "Assistente local (sem IA externa)") + '</span></div>' +
     '<div class="chat-log" id="chat-log">' + (msgs || '<div class="msg bot">Olá!</div>') + '</div>' +
     '<p class="small-note">' + esc(hint) + '</p>' +
     (!assistState.finalizado ? '<form class="chat-form" id="chat-form"><input id="chat-input" placeholder="Escreva sua mensagem..." autocomplete="off"><button class="btn btn-primary" type="submit">Enviar</button></form><div class="row" style="gap:8px"><button class="btn btn-sec" type="button" id="as-organizar">Organizar solicitação</button><button class="btn-ghost" type="button" id="as-humano-inline">Prefiro conversar com uma pessoa</button></div>' : "") +
@@ -1110,7 +1110,7 @@ function proCardRede(p){
     (p.fazReformasCompletas === true ? '<p class="small muted">Informa realizar reformas completas</p>' : p.fazReformasCompletas === false ? '<p class="small muted">Informa realizar serviços específicos</p>' : "") +
     '<p class="tel">' + esc(p.tel || "") + '</p>' +
     (p.obs ? '<p class="muted small">' + esc(p.obs) + '</p>' : "") +
-    '<div class="row" style="gap:8px">' + (p.exemplo ? '<span class="muted small">Contato fictício para demonstração.</span>' : '<a class="btn btn-primary" style="min-height:40px;padding:0 14px" href="' + waLink(p.tel, "Olá! Vi seu contato na Obrinha e gostaria de um orçamento.") + '" target="_blank" rel="noopener">WhatsApp</a><button class="btn btn-sec" style="min-height:40px;padding:0 14px" type="button" data-copiar="' + esc(p.tel || "") + '">Copiar telefone</button>') + '</div></div>';
+    '<div class="row" style="gap:8px">' + (p.exemplo ? '<span class="muted small">Contato fictício para demonstração.</span>' : '<a class="btn btn-primary" style="min-height:40px;padding:0 14px" href="' + waLink(p.tel, "Olá! Vi seu contato no Dico e gostaria de um orçamento.") + '" target="_blank" rel="noopener">WhatsApp</a><button class="btn btn-sec" style="min-height:40px;padding:0 14px" type="button" data-copiar="' + esc(p.tel || "") + '">Copiar telefone</button>') + '</div></div>';
 }
 
 function renderProsLista(){
@@ -1124,7 +1124,7 @@ function renderProsLista(){
     return (req.habilidades || []).some(h => habs.some(ph => ph.includes(normalizarTexto(h)) || normalizarTexto(h).includes(ph)));
   });
   const cont = $("#pro-lista"); if (!cont) return;
-  cont.innerHTML = lista.length ? lista.map(p => proCardRede(p)).join("") : '<div class="empty" style="grid-column:1/-1"><svg width="90" height="90" aria-hidden="true"><use href="#dico"/></svg><p class="muted">Nenhum profissional ' + (f ? "compatível com este filtro" : "cadastrado") + ' ainda. Use o formulário ao lado.</p></div>';
+  cont.innerHTML = lista.length ? lista.map(p => proCardRede(p)).join("") : '<div class="empty" style="grid-column:1/-1"><img src="assets/dico_pensativo.png" alt="" class="dico-spot" width="90" height="90"><p class="muted">Nenhum profissional ' + (f ? "compatível com este filtro" : "cadastrado") + ' ainda. Use o formulário ao lado.</p></div>';
   cont.querySelectorAll(".pro").forEach((el, i) => {
     const pro = lista[i]; if (!pro) return;
     el.insertAdjacentHTML("beforeend", '<button class="btn-ghost" type="button" style="align-self:flex-start">Excluir</button>');
@@ -1133,6 +1133,7 @@ function renderProsLista(){
 }
 
 function renderPros(){
+  renderDicoDirectory();
   _bindProUI();
   preencherBuscaProfissionais();
   renderProsLista();
@@ -1258,7 +1259,7 @@ function concluir(c) {
         c.concluido = true;
         c.sobra = s ?($("#sobra-txt").value.trim() || "sim"): null;
         save();
-        dialogo(`<svg width="130" height="130" style="align-self:center" aria-hidden="true"><use href="#dico"/></svg><h2 style="text-align:center">${s?`${esc(c.nome)} pronto!`:`${esc(c.nome)} pronto e sem sobra de material!`}</h2>
+        dialogo(`<img src="assets/dico_comemorando_anterior.png" alt="" class="dico-spot" width="130" height="130" style="align-self:center"><h2 style="text-align:center">${s?`${esc(c.nome)} pronto!`:`${esc(c.nome)} pronto e sem sobra de material!`}</h2>
   <p class="muted" style="text-align:center">${s?"Guarde a sobra bem fechada para retoques. Anote o que sobrou para planejar a próxima compra.":"Você comprou na medida e evitou entulho, um passo para o ODS 12: consumo e produção responsáveis."}</p>
   <div class="row" style="justify-content:center"><button class="btn btn-primary" type="button" id="dlg-fim">Voltar para a obra</button></div>`);
         $("#dlg-fim").onclick =() => {
@@ -1314,4 +1315,33 @@ if (!mem.pros) {
     save();
 }
 if (typeof migrarDadosProfissionais === "function") { migrarDadosProfissionais(); save(); }
-go("inicio", false, { focusContent: false });
+go(location.hash === "#profissionais" ? "profissionais" : "inicio", false, { focusContent: false });
+
+async function renderDicoDirectory() {
+    const directory = document.querySelector("#dico-directory");
+    directory.textContent = "Carregando profissionais…";
+    try {
+        const response = await fetch("/api/dico/profissionais");
+        if (!response.ok) throw new Error();
+        const professionals = await response.json();
+        directory.replaceChildren();
+        if (!professionals.length) directory.textContent = "Ainda não há profissionais com conta no Dico.";
+        for (const pro of professionals) {
+            const card = document.createElement("article");
+            card.className = "dico-directory-card stack";
+            const name = document.createElement("h3");
+            name.textContent = pro.nome;
+            const reputation = document.createElement("p");
+            const { media, total } = pro.avaliacao;
+            reputation.textContent = total ? "★ " + media.toLocaleString("pt-BR", { maximumFractionDigits: 1 }) + " de 5 · " + total + (total === 1 ? " avaliação" : " avaliações") : "Sem avaliações";
+            const link = document.createElement("a");
+            link.className = "btn btn-sec";
+            link.href = "conta.html?profissional=" + encodeURIComponent(pro.id);
+            link.textContent = "Vincular à obra";
+            card.append(name, reputation, link);
+            directory.append(card);
+        }
+    } catch {
+        directory.textContent = "Não foi possível carregar os profissionais com conta.";
+    }
+}

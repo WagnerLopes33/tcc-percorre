@@ -1,5 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { createServer, normalize } from './server.js';
 
 test('normaliza ofertas, remove preços inválidos, usados, duplicados e links inseguros', () => {
@@ -18,6 +21,62 @@ async function running(t, options) {
   t.after(() => new Promise(resolve => { server.close(resolve); server.closeAllConnections(); }));
   return `http://127.0.0.1:${server.address().port}`;
 }
+
+test('restringe o projeto aos participantes e libera as avaliações após a conclusão', async t => {
+  const dir = await mkdtemp(join(tmpdir(), 'dico-test-'));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  const dataFile = join(dir, 'dados.json');
+  const base = await running(t, { dataFile });
+  const call = (path, body, cookie) => fetch(base + '/api/dico/' + path, {
+    method: body === undefined ? 'GET' : 'POST',
+    headers: { 'Content-Type': 'application/json', ...(cookie && { Cookie: cookie }) },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  async function register(nome, tipo) {
+    const response = await call('cadastro', { nome, tipo, email: nome + '@example.com', senha: 'senha-teste' });
+    assert.equal(response.status, 200);
+    return { ...(await response.json()).conta, cookie: response.headers.get('set-cookie').split(';')[0] };
+  }
+  assert.equal((await call('conta')).status, 401);
+  const client = await register('Cliente', 'cliente');
+  const professional = await register('Pintor', 'profissional');
+  const stranger = await register('Outro', 'cliente');
+  assert.equal((await call('login', { email: 'Pintor@example.com', senha: 'senha-teste', tipo: 'cliente' })).status, 401);
+  assert.equal((await call('login', { email: 'Pintor@example.com', senha: 'senha-teste', tipo: 'profissional' })).status, 200);
+  const creation = await call('projetos', { obra: 'obra-1', nome: 'Reforma', profissional: professional.id }, client.cookie);
+  assert.equal(creation.status, 201);
+  const { id } = await creation.json();
+  const change = (action, cookie, body = {}) => call(`projetos/${id}/${action}`, body, cookie);
+  assert.equal((await change('aceitar', stranger.cookie)).status, 404);
+  assert.equal((await change('aceitar', client.cookie)).status, 409);
+  assert.equal((await change('finalizar', client.cookie)).status, 409);
+  assert.equal((await change('aceitar', professional.cookie)).status, 200);
+  assert.equal((await change('avaliar', client.cookie, { nota: 5 })).status, 409);
+  assert.equal((await change('finalizar', professional.cookie)).status, 409);
+  assert.equal((await change('finalizar', client.cookie)).status, 200);
+  assert.equal((await change('avaliar', client.cookie, { nota: 9 })).status, 400);
+  assert.equal((await change('avaliar', client.cookie, { nota: 5, comentario: 'Ótimo trabalho' })).status, 201);
+  assert.equal((await change('avaliar', client.cookie, { nota: 4 })).status, 409);
+  assert.equal((await change('avaliar', professional.cookie, { nota: 4 })).status, 201);
+  const clientAccount = await (await call('conta', undefined, client.cookie)).json();
+  assert.deepEqual(clientAccount.avaliacao, { media: 4, total: 1 });
+  const directory = await (await call('profissionais')).json();
+  assert.deepEqual(directory, [{ id: professional.id, nome: 'Pintor', tipo: 'profissional', avaliacao: { total: 1, media: 5 } }]);
+  assert.equal((await fetch(base + '/.dico/dados.json')).status, 404);
+  assert.equal((await call('sair', {}, client.cookie)).status, 200);
+  assert.equal((await call('conta', undefined, client.cookie)).status, 401);
+
+  const reloaded = await running(t, { dataFile });
+  const restored = await fetch(reloaded + '/api/dico/conta', { headers: { Cookie: professional.cookie } });
+  assert.equal(restored.status, 200);
+  assert.deepEqual((await restored.json()).recebidas, [{ nome: 'Reforma', nota: 5, comentario: 'Ótimo trabalho' }]);
+  for (const page of ['', 'conta.html', 'precos.html', 'calculadora.html']) {
+    const response = await fetch(reloaded + '/' + page);
+    assert.equal(response.status, 200);
+    assert.match(await response.text(), /src="vlibras\.js"/);
+  }
+  assert.equal((await fetch(reloaded + '/assets/dico_acenando.png')).status, 200);
+});
 
 test('modo demo explícito, cache e arquivos privados protegidos', async t => {
   const base = await running(t, { key: '', allowDemo: true });

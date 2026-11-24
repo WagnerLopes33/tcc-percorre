@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Minha conta — Dico</title>
+    <link rel="icon" href="assets/dico_icone_app.png">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="style.css">
+    <script src="conta.js" defer></script>
+    <script src="vlibras.js" defer></script>
+</head>
+<body>
+    <header><div class="bar">
+        <a class="logo" href="index.html" aria-label="Dico, início"><img src="assets/dico_icone_app.png" alt="" width="36" height="36">Dico</a>
+        <nav class="top" aria-label="Principal"><a class="quick-link" href="index.html">Início</a><a class="quick-link" href="index.html#profissionais">Profissionais</a></nav>
+    </div></header>
+    <main>
+        <p id="account-status" class="hint-err" role="status"></p>
+        <section id="auth" class="auth" aria-labelledby="auth-title" hidden>
+            <aside class="auth-art">
+                <h2>Sua obra, do início ao fim.</h2>
+                <p>Vincule quem fez o serviço e compartilhe sua experiência quando o projeto estiver concluído.</p>
+                <img src="assets/dico_no_notebook.png" alt="" width="230">
+            </aside>
+            <form id="auth-form" class="stack auth-form">
+                <div class="seg" aria-label="Acesso à conta">
+                    <button type="button" data-mode="login" aria-pressed="true">Entrar</button>
+                    <button type="button" data-mode="cadastro" aria-pressed="false">Criar conta</button>
+                </div>
+                <h1 id="auth-title">Entre no Dico</h1>
+                <fieldset class="account-roles">
+                    <legend>Qual é o seu perfil?</legend>
+                    <label><input type="radio" name="tipo" value="cliente" checked> Cliente</label>
+                    <label><input type="radio" name="tipo" value="profissional"> Profissional</label>
+                </fieldset>
+                <label id="name-field" class="field" hidden>Nome<input name="nome" maxlength="100" autocomplete="name" disabled></label>
+                <label class="field">E-mail<input type="email" name="email" required maxlength="254" autocomplete="email"></label>
+                <label class="field">Senha<input type="password" name="senha" required maxlength="128" autocomplete="current-password"></label>
+                <button class="btn btn-primary" id="auth-submit">Entrar</button>
+            </form>
+        </section>
+        <section id="dashboard" class="stack" aria-labelledby="dashboard-title" hidden>
+            <div class="row between"><div><p class="eyebrow" id="dashboard-role"></p><h1 id="dashboard-title"></h1></div><button type="button" id="logout" class="btn btn-sec">Sair</button></div>
+            <div id="reputation" class="card stack"></div>
+            <form id="invite" class="card stack" hidden>
+                <h2>Vincular profissional à obra</h2>
+                <label class="field">Obra planejada neste navegador<select name="obra" required></select></label>
+                <label class="field">Profissional com conta no Dico<select name="profissional" required></select></label>
+                <p id="invite-help" class="muted"></p>
+                <button class="btn btn-primary">Enviar convite</button>
+            </form>
+            <h2 id="projects-title">Meus projetos</h2>
+            <div id="projects" class="grid" aria-labelledby="projects-title"></div>
+        </section>
+    </main>
+    <dialog id="project-dialog" aria-labelledby="dialog-title">
+        <form id="project-form" class="stack">
+            <h2 id="dialog-title"></h2>
+            <p id="dialog-description"></p>
+            <div id="review-fields" class="stack" hidden>
+                <label class="field">Nota<select name="nota">
+                    <option value="">Selecione</option><option value="1">1 estrela</option><option value="2">2 estrelas</option><option value="3">3 estrelas</option><option value="4">4 estrelas</option><option value="5">5 estrelas</option>
+                </select></label>
+                <label class="field">Comentário (opcional)<textarea name="comentario" maxlength="500" rows="3"></textarea></label>
+            </div>
+            <p id="dialog-status" class="hint-err" role="status"></p>
+            <div class="row"><button type="button" class="btn btn-sec" id="dialog-cancel">Cancelar</button><button class="btn btn-primary" id="dialog-submit">Confirmar</button></div>
+        </form>
+    </dialog>
+    <footer>Dico · Planejamento de reformas</footer>
+</body>
+</html>
