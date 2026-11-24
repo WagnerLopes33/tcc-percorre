@@ -1,0 +1,28 @@
+#v-profissionais { gap: 22px; }
+.filtros{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px 16px;background:var(--papel);border:1px solid var(--linha);border-radius:18px;padding:18px 20px;box-shadow:var(--sombra);position:sticky;top:66px;z-index:5}
+.filtros select{min-height:42px}
+.filtros-foot{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;margin-top:-4px;min-height:24px}
+.pros2{display:grid;gap:18px 14px;grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}
+.pro2{position:relative;border:1px solid var(--linha);border-radius:18px;padding:18px;background:var(--papel);display:flex;flex-direction:column;gap:10px;box-shadow:var(--sombra)}
+.pro2.dest{border:2px solid var(--laranja);background:linear-gradient(180deg,var(--laranja-bg),#fff 55%)}
+.tag-dest{position:absolute;top:-11px;right:16px;background:var(--laranja);color:var(--floresta);font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;padding:4px 10px;border-radius:999px}
+.pro2-top{display:flex;gap:12px;align-items:center}
+.pro2 h3{font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.av2{width:48px;height:48px;border-radius:14px;background:var(--verde-claro);color:var(--floresta);font:700 20px var(--display);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.dest .av2{background:var(--laranja-claro)}
+.pro2-identity{min-width:0}
+.rate{display:flex;align-items:center;gap:4px;font-size:13px;color:var(--floresta)}
+.rate .muted{font-weight:500}
+.novo-pro{font-weight:700;color:var(--verde-ok)}
+.loc{font-size:13px;color:var(--suave)}
+.pro2-foot{display:flex;flex-wrap:wrap;gap:8px;margin-top:auto;padding-top:12px;border-top:1px solid var(--linha)}
+.pro2-foot .btn-primary{flex:1}
+.pro-results{gap:26px}
+#pro-destaques{gap:16px}
+#pro-todos{gap:12px}
+.pro-empty{grid-column:1/-1}
+.path.pro-signup{padding:24px;gap:14px}
+.pro-signup h3{font-size:20px}
+#v-profissionais details[open] summary{margin-bottom:16px}
+@media(max-width:900px){.filtros{grid-template-columns:1fr 1fr;position:static}}
+@media(max-width:600px){.filtros{grid-template-columns:1fr}.pros2{grid-template-columns:repeat(auto-fill,minmax(min(100%,250px),1fr))}}

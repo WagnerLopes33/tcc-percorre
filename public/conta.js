@@ -1,6 +1,7 @@
 const $ = selector => document.querySelector(selector);
 const authForm = $('#auth-form');
 const invite = $('#invite');
+const professionalProfile = $('#professional-profile');
 const projectForm = $('#project-form');
 const dialog = $('#project-dialog');
 const status = $('#account-status');
@@ -115,7 +116,23 @@ function renderProjects(projects) {
     }
 }
 
-async function showDashboard({ conta, avaliacao, recebidas }) {
+function renderProfessionalProfile(perfil, destaque) {
+    professionalProfile.elements.regiao.value = perfil.regiao;
+    professionalProfile.elements.whatsapp.value = perfil.whatsapp;
+    $('#profile-services').replaceChildren(...SERVICOS_BUSCA.map(([id, name]) => {
+        const label = document.createElement('label');
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.name = 'servicos';
+        input.value = id;
+        input.checked = perfil.servicos.includes(id);
+        label.append(input, name);
+        return label;
+    }));
+    $('#profile-highlight').textContent = destaque ? 'Assinatura de destaque ativa.' : 'Sem assinatura de destaque ativa.';
+}
+
+async function showDashboard({ conta, avaliacao, recebidas, perfil, destaque }) {
     const client = conta.tipo === 'cliente';
     const [projects, professionals] = await Promise.all([api('projetos'), client ? api('profissionais') : []]);
     account = conta;
@@ -129,6 +146,8 @@ async function showDashboard({ conta, avaliacao, recebidas }) {
         reputation.append(element('p', `${review.nome} · ${review.nota} de 5${review.comentario ? ' · ' + review.comentario : ''}`, 'review-detail'));
     }
     invite.hidden = !client;
+    professionalProfile.hidden = client;
+    if (!client) renderProfessionalProfile(perfil, destaque);
     renderProjects(projects);
     if (client) renderInvite(professionals);
 }
@@ -153,6 +172,12 @@ function bindForm(form, message, handler) {
 }
 
 authForm.querySelectorAll('[data-mode]').forEach(button => button.onclick = () => setMode(button.dataset.mode));
+bindForm(professionalProfile, $('#profile-status'), async ({ regiao, whatsapp }) => {
+    const servicos = new FormData(professionalProfile).getAll('servicos');
+    if (!servicos.length) throw new Error('Selecione pelo menos um serviço.');
+    await api('perfil-profissional', { regiao, servicos, whatsapp });
+    $('#profile-status').textContent = 'Perfil atualizado.';
+});
 bindForm(authForm, status, async fields => {
     await api(mode, fields);
     authForm.elements.senha.value = '';

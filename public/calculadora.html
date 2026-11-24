@@ -10,6 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="inicio.css">
     <link rel="stylesheet" href="calculadora.css">
     <script src="calculadora.js" defer></script>
 </head>
@@ -37,10 +38,15 @@
                 <img src="assets/dico_icone_app.png" alt="" width="36" height="36">
                 <span>Dico</span>
             </a>
-            <nav class="top quick-navigation" aria-label="Principal">
-                <a href="conta.html">Minha conta</a>
-                <a href="index.html">Início e minhas obras</a>
-                <a href="calculadora.html" aria-current="page">Cálculo rápido</a>
+            <nav class="top quick-navigation" id="inicio-nav" aria-label="Principal">
+                <a class="quick-page-link" href="index.html">Início</a>
+                <a class="quick-page-link" href="index.html#profissionais">Profissionais</a>
+                <a class="nav-link" href="calculadora.html" aria-current="page">Cálculo rápido ↗</a>
+                <a class="nav-link" href="precos.html">Pesquisar preços ↗</a>
+                <span class="nav-cta">
+                    <a class="btn btn-sec btn-sm" href="conta.html?tipo=cliente">Entrar</a>
+                    <a class="btn btn-primary btn-sm" href="conta.html?tipo=cliente&amp;modo=cadastro">Criar conta</a>
+                </span>
             </nav>
         </div>
     </header>
@@ -48,10 +54,13 @@
         <div id="backbar">
             <a class="btn-ghost" href="index.html">← Voltar para minhas obras</a>
         </div>
-        <section class="intro stack">
-            <span class="eyebrow">CALCULADORA DE REFORMA</span>
-            <h1>Quanto material você vai precisar?</h1>
-            <p class="muted">Escolha um serviço, informe as medidas e confira a estimativa. Um jeito simples de planejar uma pequena reforma.</p>
+        <section class="atalho-hero quick-hero" aria-labelledby="quick-title">
+            <div>
+                <span class="pill"><i></i>Sem criar obra</span>
+                <h1 id="quick-title">Cálculo rápido</h1>
+                <p>Informe o serviço e as medidas. O Dico mostra quanto material comprar, na hora.</p>
+            </div>
+            <img src="assets/dico_no_notebook.png" alt="">
         </section>
         <section class="workspace layout" aria-label="Calculadora de materiais">
             <div class="calculator card">
@@ -97,8 +106,45 @@
         </section>
         <p class="notice"><strong>Uma estimativa para começar.</strong> O consumo real depende do produto, da superfície e da execução. Confira a embalagem e valide as condições da obra com um profissional. Diferenças de orçamento, por si só, não indicam cobrança indevida. Os resultados do cálculo rápido não são salvos nas suas obras.</p>
     </main>
-    <footer>
-        Projeto de TCC. Planejar também é construir. Cálculos estimados para pequenas reformas.
+    <footer class="site">
+        <div class="ft">
+            <div class="ft-brand">
+                <div class="ft-logo"><img src="assets/dico_icone_app.png" width="40" height="40" alt="">Dico</div>
+                <p>Obra sem susto e sem desperdício: a conta certa antes da compra.</p>
+                <div class="ft-ods"><span>ODS 11</span><span>ODS 12</span><span>ODS 13</span></div>
+            </div>
+            <div>
+                <h4>Para quem reforma</h4>
+                <ul>
+                    <li><a href="index.html#novaobra">Começar uma obra</a></li>
+                    <li><a href="index.html#obra">Minha obra</a></li>
+                    <li><a href="index.html#gastos">Meus gastos</a></li>
+                    <li><a href="index.html#profissionais">Encontrar profissionais</a></li>
+                    <li><a href="calculadora.html" aria-current="page">Cálculo rápido ↗</a></li>
+                    <li><a href="precos.html">Pesquisar preços ↗</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4>Para profissionais</h4>
+                <ul>
+                    <li><a href="conta.html?tipo=profissional&amp;modo=cadastro">Cadastrar grátis</a></li>
+                    <li><a href="conta.html?tipo=profissional">Entrar no painel</a></li>
+                    <li><a href="index.html#inicio-taxa">Como funciona o percentual</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4>O projeto</h4>
+                <ul>
+                    <li>TCC · Desenvolvimento Web</li>
+                    <li>Instituto Percorre · 2026</li>
+                    <li><a href="https://tcc-percorre.onrender.com" target="_blank" rel="noopener">Site no ar ↗</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="ft-bottom">
+            <span>© 2026 Dico · Protótipo do TCC</span>
+            <span>Cálculos e preços são estimativas e não substituem a orientação de um profissional.</span>
+        </div>
     </footer>
 </body>
 </html>

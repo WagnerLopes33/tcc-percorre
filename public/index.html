@@ -8,6 +8,8 @@
         <script src="vlibras.js" defer></script>
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap">
         <link rel="stylesheet" href="style.css">
+        <link rel="stylesheet" href="inicio.css">
+        <link rel="stylesheet" href="profissionais.css">
     </head>
     <body>
         <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -62,7 +64,21 @@
                     <img src="assets/dico_icone_app.png" alt="" width="36" height="36">
                     <span>Dico</span>
                 </button>
-                <nav class="top" aria-label="Principal">
+                <nav id="inicio-nav" class="top" aria-label="Principal" hidden>
+                    <button type="button" data-go="inicio" aria-current="true">In&iacute;cio</button>
+                    <button type="button" data-go="obra" data-home-client hidden>Minha obra</button>
+                    <button type="button" data-go="gastos" data-home-client hidden>Meus gastos</button>
+                    <a class="nav-link" href="conta.html" data-home-professional hidden>Painel</a>
+                    <button type="button" data-go="profissionais">Profissionais</button>
+                    <a class="nav-link" href="calculadora.html" target="_blank" rel="noopener">C&aacute;lculo r&aacute;pido &nearr;</a>
+                    <a class="nav-link" href="precos.html" target="_blank" rel="noopener">Pesquisar pre&ccedil;os &nearr;</a>
+                    <span class="nav-cta">
+                        <a class="btn btn-sec btn-sm" href="conta.html?tipo=cliente">Entrar</a>
+                        <a class="btn btn-primary btn-sm" href="conta.html?tipo=cliente&amp;modo=cadastro">Criar conta</a>
+                    </span>
+                    <a id="inicio-user" class="user-chip" href="conta.html" hidden><span class="avatar" aria-hidden="true"></span><span class="nm"><small></small><span class="first-name"></span></span></a>
+                </nav>
+                <nav id="app-nav" class="top" aria-label="Principal">
                     <button type="button" data-go="inicio">Início</button>
                     <button type="button" data-go="obra">Minha obra</button>
                     <button type="button" data-go="gastos">Meus gastos</button>
@@ -83,39 +99,38 @@
             </nav>
             <!-- INÍCIO -->
             <section id="v-inicio" class="stack" hidden>
-                <div class="hero dico-hero">
-                    <div class="stack">
-                        <span class="badge b-or" style="align-self:flex-start">Calculadora de reforma</span>
-                        <h1>Obra sem susto e <em>sem desperdício.</em></h1>
-                        <p style="max-width:520px">
-                            Diga o que vai reformar e as medidas do cômodo. O Dico calcula o material, compara opções com preços ilustrativos e acompanha os seus gastos.
-                        </p>
-                        <div class="row">
-                            <button class="btn btn-primary" type="button" id="btn-nova">Começar uma obra</button>
-                        </div>
-                    </div>
-                    <div class="dico-hero-art"><img src="assets/dico_acenando.png" width="416" height="468" alt="Dico, o castor mascote, acenando"></div>
-                </div>
-                <section class="stack" aria-labelledby="paths-title">
-                    <h2 id="paths-title">Para quem reforma e para quem faz a obra</h2>
-                    <div class="dico-paths">
-                        <article class="card stack">
-                            <div class="row"><img class="dico-spot" src="assets/dico_com_projeto.png" alt="" width="72" height="72"><h3>Vou reformar</h3></div>
-                            <p>Planeje serviços por cômodo, calcule os materiais e acompanhe os gastos.</p>
-                            <div class="row"><a class="btn btn-sec" href="conta.html?tipo=cliente">Área do cliente</a></div>
-                        </article>
-                        <article class="card stack dico-path-pro">
-                            <div class="row"><img class="dico-spot" src="assets/dico_construindo_anterior.png" alt="" width="72" height="72"><h3>Sou profissional</h3></div>
-                            <p>Receba convites de clientes, acompanhe seus projetos e compartilhe avaliações.</p>
-                            <div class="row"><a class="btn btn-primary" href="conta.html?tipo=profissional">Área do profissional</a></div>
-                        </article>
-                    </div>
-                </section>
-                <div class="row between">
-                    <h2>Suas obras</h2>
-                </div>
-                <div id="lista-obras" class="grid">
-                </div>
+            <div class="hero2">
+            <div class="txt">
+            <span class="pill"><i></i>Calculadora de reforma · grátis para quem reforma</span>
+            <h1>Obra sem susto e <span>sem desperdício.</span></h1>
+            <p class="lead">Calcule o material certo para cada cômodo, encontre o preço nas lojas e acompanhe cada gasto. Precisa de mão de obra? O Dico conecta você a profissionais da região.</p>
+            <div class="cta-row"><button class="btn btn-primary btn-lg" type="button" id="btn-nova">Começar minha obra</button><a class="btn btn-light btn-lg" href="conta.html?tipo=profissional&amp;modo=cadastro">Sou profissional</a></div>
+            <div class="trust"><span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Lista de materiais na medida</span><span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Preço das lojas</span><span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Alerta de orçamento</span></div>
+            </div>
+            <div class="hero-art">
+                <img src="assets/dico_acenando.png" width="416" height="468" alt="Dico, o castor mascote, acenando">
+            </div>
+            </div>
+            <div id="banner-conta" class="banner">
+                <div class="l"><img src="assets/dico_no_notebook.png" alt="" width="48"><div><p><strong>Crie sua conta gr&aacute;tis</strong></p><p class="muted small">Salve a obra, acompanhe os gastos e pe&ccedil;a or&ccedil;amento a profissionais.</p></div></div>
+                <div class="row"><a class="btn-ghost" href="conta.html?tipo=cliente">Entrar</a><a class="btn btn-primary" href="conta.html?tipo=cliente&amp;modo=cadastro">Criar conta</a></div>
+            </div>
+            <div class="section-head"><span class="eyebrow">Dois jeitos de usar</span><h2>Para quem reforma e para quem faz a obra</h2></div>
+            <div class="paths">
+            <div class="path"><div class="path-head"><img src="assets/dico_com_projeto.png" alt=""><div><span class="eyebrow">Vou reformar</span><h3>Planeje e compre só o necessário</h3></div></div>
+            <ol><li><span class="n">1</span><div><p style="font-weight:700">Escolha o cômodo e os serviços</p><p class="muted small">Pintura, piso, revestimento, massa e rodapé.</p></div></li>
+            <li><span class="n">2</span><div><p style="font-weight:700">Informe as medidas</p><p class="muted small">O “i” de cada campo explica o que medir.</p></div></li>
+            <li><span class="n">3</span><div><p style="font-weight:700">Receba a lista e controle os gastos</p><p class="muted small">Com alerta antes de passar do orçamento.</p></div></li></ol>
+            <div class="foot"><button class="btn btn-primary" type="button" data-nova-obra>Começar minha obra</button><a class="btn-ghost" href="conta.html?tipo=cliente">Já tenho conta</a></div></div>
+            <div class="path pro"><div class="path-head"><img src="assets/dico_construindo_anterior.png" alt=""><div><span class="eyebrow">Sou profissional</span><h3>Receba clientes certos para o seu serviço</h3></div></div>
+            <ol><li><span class="n">1</span><div><p style="font-weight:700">Crie seu perfil grátis</p><p class="muted small">Serviços que você faz, região e WhatsApp.</p></div></li>
+            <li><span class="n">2</span><div><p style="font-weight:700">Receba pedidos de orçamento</p><p class="muted small">Só de obras com os serviços que você presta.</p></div></li>
+            <li><span class="n">3</span><div><p style="font-weight:700">Pague só quando fechar</p><p class="muted small">Percentual só no serviço fechado. Destaque opcional por assinatura.</p></div></li></ol>
+            <div class="foot"><a class="btn btn-primary" href="conta.html?tipo=profissional&amp;modo=cadastro">Cadastrar grátis</a><a class="btn-ghost" href="conta.html?tipo=profissional">Entrar no painel</a></div></div>
+            </div>
+            <div class="impact"><img src="assets/dico_pensativo.png" alt=""><div><strong>101 mi t</strong><p class="muted">de entulho gerados no Brasil em 2024</p></div><div><strong>46%</strong><p class="muted">vêm de reformas e pequenas obras (ABREMA)</p></div></div>
+            <div class="row between" id="obras-head"><h2>Suas obras</h2><button class="btn btn-sec" type="button" data-nova-obra>+ Nova obra</button></div>
+            <div id="lista-obras" class="grid"></div>
             </section>
             <!-- NOVA OBRA -->
             <section id="v-novaobra" hidden>
@@ -513,22 +528,55 @@
             <section id="v-gastos" class="stack" hidden>
             </section>
             <section id="v-profissionais" class="stack" hidden>
-                <div class="dico-section-hero">
-                    <div class="stack">
+                <div class="atalho-hero">
+                    <div>
+                        <span class="pill"><i></i>Rede de profissionais</span>
                         <h1>Profissionais da região</h1>
-                        <p>Encontre profissionais, consulte avaliações e convide quem vai trabalhar na sua obra.</p>
+                        <p>Pintores, pedreiros e instaladores avaliados por quem já reformou. Peça um orçamento e converse pelo WhatsApp.</p>
                     </div>
-                    <img src="assets/dico_carregando_materiais.png" alt="" width="165" height="165" class="dico-spot">
+                    <img src="assets/dico_construindo_anterior.png" alt="">
                 </div>
-                <section class="card stack" aria-labelledby="dico-directory-title">
-                    <h2 id="dico-directory-title">Profissionais com conta no Dico</h2>
-                    <div id="dico-directory" class="grid" aria-live="polite"></div>
-                    <div><a class="btn btn-sec" href="conta.html?tipo=profissional&modo=cadastro">Criar conta profissional</a></div>
-                </section>
+                <div class="filtros" role="search" aria-label="Filtrar profissionais">
+                    <label class="field"><span class="lbl">Serviço</span><select id="pf-servico"><option value="">Todos os serviços</option></select></label>
+                    <label class="field">
+                        <span class="lbl">Região</span>
+                        <select id="pf-regiao">
+                            <option value="">Todas as regiões</option>
+                            <option value="centro">Centro</option>
+                            <option value="zona norte">Zona norte</option>
+                            <option value="zona sul">Zona sul</option>
+                            <option value="zona leste">Zona leste</option>
+                            <option value="zona oeste">Zona oeste</option>
+                        </select>
+                    </label>
+                    <label class="field"><span class="lbl">Avaliação</span><select id="pf-nota"><option value="">Qualquer nota</option><option value="4">4,0 ou mais</option><option value="4.5">4,5 ou mais</option></select></label>
+                    <label class="field"><span class="lbl">Ordenar por</span><select id="pf-ordem"><option value="rel">Relevância</option><option value="nota">Melhor avaliados</option><option value="qtd">Mais avaliações</option></select></label>
+                    <div class="filtros-foot"><span class="muted small" id="pf-cont" role="status"></span><button class="btn-ghost" type="button" id="pf-limpar" hidden>Limpar filtros</button></div>
+                </div>
+                <div class="layout">
+                    <div class="stack pro-results">
+                        <section class="stack" id="pro-destaques" aria-labelledby="pro-destaques-title" hidden>
+                            <div class="row between"><h2 id="pro-destaques-title">Em destaque</h2><button class="btn-ghost small" type="button" data-info-destaque>O que é destaque?</button></div>
+                            <div class="pros2" id="pro-destaques-lista"></div>
+                        </section>
+                        <section class="stack" id="pro-todos" aria-labelledby="pro-todos-title">
+                            <h2 id="pro-todos-title">Todos os profissionais</h2>
+                            <div id="dico-directory" class="pros2"></div>
+                        </section>
+                    </div>
+                    <aside class="path pro pro-signup">
+                        <div class="path-head"><img src="assets/dico_construindo_anterior.png" alt=""><h3>É profissional?</h3></div>
+                        <p class="muted">Cadastre-se grátis, receba convites para obras e apareça no topo da busca da sua região com uma assinatura de destaque.</p>
+                        <a class="btn btn-primary" href="conta.html?tipo=profissional&amp;modo=cadastro">Cadastrar grátis</a>
+                        <button class="btn-ghost" type="button" data-info-destaque>Como funciona o destaque</button>
+                    </aside>
+                </div>
+                <details class="card">
+                <summary>Contatos salvos neste navegador</summary>
                 <div class="layout">
                     <div class="card">
                         <div class="row between" style="margin-bottom:16px">
-                            <h2>Cadastrados neste navegador</h2>
+                            <h2>Seus contatos</h2>
                             <label class="lbl" for="pf-filtro" style="gap:8px">
                                 Serviço
                                 <select id="pf-filtro" style="min-height:40px;width:auto">
@@ -556,10 +604,11 @@
                             </div>
                             <fieldset style="border:0;padding:0;margin:0" class="field">
                                 <legend class="lbl" style="margin-bottom:8px" data-info="Marque todos os serviços que o profissional faz. Ele aparece quando alguém escolhe um desses serviços.">
-                                    Serviços que presta *
+                                    Especialidade e habilidades *
                                 </legend>
-                                <div class="chips" id="p-servs">
-                                </div>
+                                <label class="lbl" for="p-especialidade">Especialidade principal</label>
+                                <select id="p-especialidade"></select>
+                                <div class="chips" id="p-habilidades"></div>
                             </fieldset>
                             <div class="field">
                                 <label class="lbl" for="p-regiao" data-info="Bairro ou cidade onde o profissional atende.">
@@ -585,9 +634,17 @@
                         </div>
                     </form>
                 </div>
+                </details>
             </section>
         </main>
-        <footer class="dico-footer">
+        <footer class="site" id="inicio-footer" hidden><div class="ft">
+        <div class="ft-brand"><div class="ft-logo"><img src="assets/dico_icone_app.png" width="40" height="40" alt="">Dico</div><p>Obra sem susto e sem desperdício: a conta certa antes da compra.</p><div class="ft-ods"><span>ODS 11</span><span>ODS 12</span><span>ODS 13</span></div></div>
+        <div><h4>Para quem reforma</h4><ul><li><button type="button" data-nova-obra>Começar uma obra</button></li><li><button type="button" data-go="obra">Minha obra</button></li><li><button type="button" data-go="gastos">Meus gastos</button></li><li><button type="button" data-go="profissionais">Encontrar profissionais</button></li><li><a href="calculadora.html" target="_blank" rel="noopener">Cálculo rápido ↗</a></li><li><a href="precos.html" target="_blank" rel="noopener">Pesquisar preços ↗</a></li></ul></div>
+        <div><h4>Para profissionais</h4><ul><li><button type="button" data-entrar="pro-cadastro">Cadastrar grátis</button></li><li><button type="button" data-entrar="pro">Entrar no painel</button></li><li><button type="button" id="inicio-taxa">Como funciona o percentual</button></li></ul></div>
+        <div><h4>O projeto</h4><ul><li>TCC · Desenvolvimento Web</li><li>Instituto Percorre · 2026</li><li><a href="https://tcc-percorre.onrender.com" target="_blank" rel="noopener">Site no ar ↗</a></li></ul></div>
+        </div>
+        <div class="ft-bottom"><span>© 2026 Dico · Protótipo do TCC</span><span>Cálculos e preços são estimativas de exemplo e não substituem a orientação de um profissional. Seus dados ficam salvos só neste navegador.</span></div></footer>
+        <footer class="dico-footer" id="app-footer">
             <div class="row between">
                 <strong>Dico · Projeto de TCC</strong>
                 <nav class="row" aria-label="Rodapé">

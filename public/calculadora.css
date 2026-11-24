@@ -5,7 +5,7 @@
     text-decoration: none;
 }
 
-.quick-navigation a {
+.quick-navigation .quick-page-link {
     display: inline-flex;
     align-items: center;
     padding: 9px 14px;
@@ -16,13 +16,8 @@
     white-space: nowrap;
 }
 
-.quick-navigation a:hover {
+.quick-navigation .quick-page-link:hover {
     background: var(--fundo);
-    color: var(--floresta);
-}
-
-.quick-navigation a[aria-current="page"] {
-    background: var(--laranja-bg);
     color: var(--floresta);
 }
 
@@ -32,13 +27,8 @@
 }
 
 /* Conteúdo e seleção de serviço. */
-.intro {
-    gap: 10px;
-    margin: 0 0 24px;
-}
-
-.intro p {
-    max-width: 680px;
+.quick-hero {
+    margin-bottom: 24px;
 }
 
 .workspace {
@@ -340,7 +330,7 @@
         flex-direction: column;
     }
 
-    .quick-navigation a {
+    .quick-navigation .quick-page-link {
         padding: 8px 10px;
         font-size: 13px;
     }

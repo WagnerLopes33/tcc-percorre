@@ -8,6 +8,10 @@ O planejamento da obra e os gastos ficam no navegador. O servidor salva as conta
 
 O VLibras é carregado do serviço oficial e requer acesso à internet.
 
+### Destaque na rede de profissionais
+
+O profissional preenche a região, os serviços e o WhatsApp opcional no próprio painel. Para ativar o destaque após a confirmação do pagamento, configure `DICO_DESTAQUES` no ambiente do servidor com um objeto JSON que mapeia e-mails em minúsculas para datas de expiração ISO 8601, por exemplo `{"profissional@example.com":"2030-01-01T00:00:00Z"}`. Reinicie o servidor após alterar a configuração. Retire a entrada para revogar o destaque. A cobrança é externa ao site.
+
 ## Pesquisa de preços
 
 O menu **Pesquisar preços** e os links na tela de resultado abrem `precos.html`.

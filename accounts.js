@@ -11,6 +11,7 @@ const clean = value => typeof value === 'string' ? value.trim() : '';
 const emailOf = value => clean(value).toLowerCase();
 
 function mountAccounts(app, file = process.env.DICO_DATA_FILE || join(__dirname, '.dico', 'dados.json')) {
+  const highlights = new Map(Object.entries(JSON.parse(process.env.DICO_DESTAQUES || '{}')));
   let data;
   function read() {
     if (data) return data;
@@ -48,6 +49,13 @@ function mountAccounts(app, file = process.env.DICO_DATA_FILE || join(__dirname,
     const reviews = read().reviews.filter(review => review.target === id);
     return { total: reviews.length, media: reviews.length ? reviews.reduce((sum, review) => sum + review.nota, 0) / reviews.length : null };
   }
+  function professionalProfile(account) {
+    return { regiao: '', servicos: [], whatsapp: '', ...account.perfil };
+  }
+  function highlighted(account) {
+    const expires = highlights.get(account.email);
+    return typeof expires === 'string' && Date.parse(expires) > Date.now();
+  }
   app.use('/api/dico', (req, res, next) => {
     res.set('Cache-Control', 'no-store');
     if (req.method === 'POST' && !req.is('application/json')) return fail(res, 415, 'Envie os dados em JSON.');
@@ -78,7 +86,8 @@ function mountAccounts(app, file = process.env.DICO_DATA_FILE || join(__dirname,
   });
   app.get('/api/dico/profissionais', (req, res) => {
     res.json(read().accounts.filter(account => account.tipo === 'profissional').map(account => ({
-      ...publicAccount(account), avaliacao: stats(account.id),
+      ...publicAccount(account), ...professionalProfile(account),
+      avaliacao: stats(account.id), destaque: highlighted(account),
     })));
   });
   app.use('/api/dico', (req, res, next) => {
@@ -95,7 +104,25 @@ function mountAccounts(app, file = process.env.DICO_DATA_FILE || join(__dirname,
       nota: review.nota,
       comentario: review.comentario,
     }));
-    res.json({ conta: publicAccount(req.account), avaliacao: stats(id), recebidas });
+    const profile = req.account.tipo === 'profissional' ? {
+      perfil: professionalProfile(req.account),
+      destaque: highlighted(req.account),
+    } : {};
+    res.json({ conta: publicAccount(req.account), avaliacao: stats(id), recebidas, ...profile });
+  });
+  app.post('/api/dico/perfil-profissional', (req, res) => {
+    if (req.account.tipo !== 'profissional') return fail(res, 403, 'Esta opção é exclusiva para profissionais.');
+    const { regiao, servicos, whatsapp } = req.body || {};
+    const phone = clean(whatsapp).replace(/\D/g, '');
+    if (!clean(regiao) || clean(regiao).length > 100 ||
+        !Array.isArray(servicos) || !servicos.length || servicos.length > 14 ||
+        !servicos.every(item => typeof item === 'string' && /^[a-z_]{1,30}$/.test(item)) ||
+        (clean(whatsapp) && !/^\d{10,11}$/.test(phone))) {
+      return fail(res, 400, 'Informe uma região, pelo menos um serviço e, se desejar, um WhatsApp com DDD.');
+    }
+    const perfil = { regiao: clean(regiao), servicos: [...new Set(servicos)], whatsapp: phone };
+    change(next => { next.accounts.find(account => account.id === req.account.id).perfil = perfil; });
+    res.json({ perfil });
   });
   app.post('/api/dico/sair', (req, res) => {
     change(next => { next.sessions = next.sessions.filter(item => item.hash !== sessionHash(req)); });

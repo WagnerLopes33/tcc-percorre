@@ -109,7 +109,7 @@ if (require.main === module) {
   try {
     const env = readFileSync(join(__dirname, '.env'), 'utf8');
     for (const line of env.split(/\r?\n/)) {
-      const match = line.match(/^\s*(SERPAPI_API_KEY|PORT)\s*=\s*(.*?)\s*$/);
+      const match = line.match(/^\s*(SERPAPI_API_KEY|PORT|DICO_DATA_FILE|DICO_DESTAQUES)\s*=\s*(.*?)\s*$/);
       if (!match || process.env[match[1]] !== undefined) continue;
       let value = match[2];
       if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) value = value.slice(1, -1);

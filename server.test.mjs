@@ -23,6 +23,12 @@ async function running(t, options) {
 }
 
 test('restringe o projeto aos participantes e libera as avaliações após a conclusão', async t => {
+  const previousHighlights = process.env.DICO_DESTAQUES;
+  process.env.DICO_DESTAQUES = JSON.stringify({ 'pintor@example.com': new Date(Date.now() + 600_000).toISOString() });
+  t.after(() => {
+    if (previousHighlights === undefined) delete process.env.DICO_DESTAQUES;
+    else process.env.DICO_DESTAQUES = previousHighlights;
+  });
   const dir = await mkdtemp(join(tmpdir(), 'dico-test-'));
   t.after(() => rm(dir, { recursive: true, force: true }));
   const dataFile = join(dir, 'dados.json');
@@ -41,6 +47,9 @@ test('restringe o projeto aos participantes e libera as avaliações após a con
   const client = await register('Cliente', 'cliente');
   const professional = await register('Pintor', 'profissional');
   const stranger = await register('Outro', 'cliente');
+  const perfil = { regiao: 'Zona Leste, São Paulo', servicos: ['pintura'], whatsapp: '11987654321' };
+  assert.equal((await call('perfil-profissional', perfil, client.cookie)).status, 403);
+  assert.equal((await call('perfil-profissional', { ...perfil, destaque: false }, professional.cookie)).status, 200);
   assert.equal((await call('login', { email: 'Pintor@example.com', senha: 'senha-teste', tipo: 'cliente' })).status, 401);
   assert.equal((await call('login', { email: 'Pintor@example.com', senha: 'senha-teste', tipo: 'profissional' })).status, 200);
   const creation = await call('projetos', { obra: 'obra-1', nome: 'Reforma', profissional: professional.id }, client.cookie);
@@ -61,15 +70,18 @@ test('restringe o projeto aos participantes e libera as avaliações após a con
   const clientAccount = await (await call('conta', undefined, client.cookie)).json();
   assert.deepEqual(clientAccount.avaliacao, { media: 4, total: 1 });
   const directory = await (await call('profissionais')).json();
-  assert.deepEqual(directory, [{ id: professional.id, nome: 'Pintor', tipo: 'profissional', avaliacao: { total: 1, media: 5 } }]);
+  assert.deepEqual(directory, [{ id: professional.id, nome: 'Pintor', tipo: 'profissional', ...perfil, avaliacao: { total: 1, media: 5 }, destaque: true }]);
   assert.equal((await fetch(base + '/.dico/dados.json')).status, 404);
   assert.equal((await call('sair', {}, client.cookie)).status, 200);
   assert.equal((await call('conta', undefined, client.cookie)).status, 401);
 
+  process.env.DICO_DESTAQUES = JSON.stringify({ 'pintor@example.com': new Date(Date.now() - 600_000).toISOString() });
   const reloaded = await running(t, { dataFile });
   const restored = await fetch(reloaded + '/api/dico/conta', { headers: { Cookie: professional.cookie } });
   assert.equal(restored.status, 200);
   assert.deepEqual((await restored.json()).recebidas, [{ nome: 'Reforma', nota: 5, comentario: 'Ótimo trabalho' }]);
+  const afterExpiry = await (await fetch(reloaded + '/api/dico/profissionais')).json();
+  assert.deepEqual(afterExpiry, [{ ...directory[0], destaque: false }]);
   for (const page of ['', 'conta.html', 'precos.html', 'calculadora.html']) {
     const response = await fetch(reloaded + '/' + page);
     assert.equal(response.status, 200);

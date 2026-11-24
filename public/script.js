@@ -288,6 +288,11 @@ function go(v, back, { focusContent = true } = {}) {
     viewAtual = v;
     $("#backbar").hidden = v === "inicio";
     views.forEach(x => $("#v-" + x).hidden = x !== v);
+    const prototypeChrome = v === "inicio" || v === "profissionais";
+    $("#inicio-nav").hidden = !prototypeChrome;
+    $("#inicio-footer").hidden = !prototypeChrome;
+    $("#app-nav").hidden = prototypeChrome;
+    $("#app-footer").hidden = prototypeChrome;
     document.querySelectorAll("nav.top button").forEach(b => b.setAttribute("aria-current", String(b.dataset.go === v ||((v === "comodo" || v === "resultado") && b.dataset.go === "obra"))));
     passo( {
         novaobra: 1, resultado: atual.modo === "sug" ? 6: 5, gastos: 7
@@ -343,6 +348,8 @@ function onSubmit(sel, fn) {
 }
 /* ================= INÍCIO ================= */
 function renderInicio() {
+    $("#obras-head [data-nova-obra]").hidden = !mem.obras.length;
+    renderInicioConta();
     const el = $("#lista-obras");
     if (! mem.obras.length) {
         el.innerHTML = `<div class="card empty" style="grid-column:1/-1"><img src="assets/dico_pensativo.png" alt="" class="dico-spot" width="110" height="110"><h3>Ainda não tem obra.</h3><p class="muted">Vamos começar? O Dico ajuda em cada passo.</p></div>`;
@@ -363,12 +370,53 @@ $("#lista-obras").addEventListener("click", e => {
         go("obra")
     }
 });
-$("#btn-nova").onclick =() => {
+function novaObra() {
     $("#f-obra").reset();
     $("#e-o-nome").textContent = "";
     $("#o-nome").removeAttribute("aria-invalid");
     go("novaobra");
     $("#o-nome").focus()
+}
+$("#btn-nova").onclick = novaObra;
+document.querySelectorAll("[data-nova-obra]").forEach(button => button.onclick = novaObra);
+
+async function renderInicioConta() {
+    const user = $("#inicio-user");
+    const nav = $("#inicio-nav");
+    const banner = $("#banner-conta");
+    function showRole(role) {
+        nav.querySelectorAll("[data-home-client]").forEach(button => button.hidden = role !== "cliente");
+        nav.querySelector("[data-home-professional]").hidden = role !== "profissional";
+    }
+    try {
+        const response = await fetch("/api/dico/conta");
+        if (!response.ok) throw new Error();
+        const { conta } = await response.json();
+        const firstName = conta.nome.trim().split(/\s+/)[0];
+        user.querySelector(".avatar").textContent = Array.from(firstName)[0].toUpperCase();
+        user.querySelector(".first-name").textContent = firstName;
+        user.querySelector("small").textContent = conta.tipo === "profissional" ? "Profissional" : "Vou reformar";
+        user.setAttribute("aria-label", "Conta de " + conta.nome);
+        $("#obras-head h2").textContent = "Suas obras, " + firstName;
+        showRole(conta.tipo);
+        user.hidden = false;
+        nav.querySelector(".nav-cta").hidden = true;
+        banner.hidden = true;
+    } catch {
+        $("#obras-head h2").textContent = "Suas obras";
+        showRole(null);
+        user.hidden = true;
+        nav.querySelector(".nav-cta").hidden = false;
+        banner.hidden = false;
+    }
+}
+
+$("#inicio-taxa").onclick = () => {
+    dialogo(`<h2>Como funciona o percentual</h2>
+        <p>O protótipo prevê uma cobrança percentual apenas quando o profissional fecha um serviço pelo Dico, com destaque opcional por assinatura.</p>
+        <p class="muted">Os valores ainda estão em definição. A cobrança ainda não está disponível.</p>
+        <div class="row"><button class="btn btn-primary" type="button" id="dlg-fechar-taxa">Entendi</button></div>`);
+    $("#dlg-fechar-taxa").onclick = () => $("#dlg").close();
 };
 /* ================= NOVA OBRA ================= */
 onSubmit("#f-obra", () => {
@@ -1133,6 +1181,7 @@ function renderProsLista(){
 }
 
 function renderPros(){
+  renderInicioConta();
   renderDicoDirectory();
   _bindProUI();
   preencherBuscaProfissionais();
@@ -1315,33 +1364,95 @@ if (!mem.pros) {
     save();
 }
 if (typeof migrarDadosProfissionais === "function") { migrarDadosProfissionais(); save(); }
-go(location.hash === "#profissionais" ? "profissionais" : "inicio", false, { focusContent: false });
+const directoryFilters = ["#pf-servico", "#pf-regiao", "#pf-nota", "#pf-ordem"].map($);
+const [serviceFilter, regionFilter, ratingFilter, orderFilter] = directoryFilters;
+function matchesDirectoryRegion(value, selected) {
+    const region = normalizarTexto(value);
+    const labels = region.match(/\b(?:centro|zona (?:norte|sul|leste|oeste))\b/g) || [];
+    if (labels.length) return labels.includes(selected);
+    return selected === "zona " + region;
+}
+const proNameOrder = (a, b) => a.nome.localeCompare(b.nome, "pt-BR");
+let directoryProfessionals = null;
+let directoryRequest = 0;
+
+serviceFilter.append(...SERVICOS_BUSCA.map(([id, name]) => new Option(name, id)));
+directoryFilters.forEach(filter => filter.addEventListener("change", renderDirectoryResults));
+$("#pf-limpar").onclick = () => {
+    directoryFilters.slice(0, 3).forEach(filter => filter.value = "");
+    orderFilter.value = "rel";
+    renderDirectoryResults();
+};
+document.querySelectorAll("[data-info-destaque]").forEach(button => button.onclick = () => {
+    dialogo('<h2>O que é destaque?</h2><p>Profissionais com assinatura ativa aparecem no topo da busca da sua região, com a etiqueta <strong>Destaque</strong>.</p><p>O espaço é pago. Os mesmos filtros continuam valendo e a nota é calculada pelas avaliações recebidas.</p><div class="row"><button class="btn btn-primary" type="button" id="dlg-destaque-fechar">Entendi</button></div>');
+    $("#dlg-destaque-fechar").onclick = () => $("#dlg").close();
+});
+
+function directoryCard(pro, featured) {
+    const { media, total } = pro.avaliacao;
+    const rating = total ? '★ <strong>' + media.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) +
+        '</strong><span class="muted">(' + total + (total === 1 ? ' avaliação)' : ' avaliações)') + '</span>'
+        : '<span class="novo-pro">Novo no Dico</span>';
+    const services = pro.servicos.map(servicoBuscaNome);
+    const initials = pro.nome.trim().split(/\s+/).slice(0, 2).map(word => Array.from(word)[0]).join("").toUpperCase();
+    const whatsapp = /^\d{10,11}$/.test(pro.whatsapp) ? waLink(pro.whatsapp) : "";
+    return `<article class="pro2${featured ? ' dest' : ''}">
+        ${featured ? '<span class="tag-dest">Destaque</span>' : ''}
+        <div class="pro2-top"><span class="av2" aria-hidden="true">${esc(initials)}</span><div class="pro2-identity"><h3>${esc(pro.nome)}</h3><p class="rate">${rating}</p></div></div>
+        <p class="loc">${esc(pro.regiao || 'Região não informada')}</p>
+        <div class="tag-row">${services.map(name => `<span class="tag">${esc(name)}</span>`).join('')}</div>
+        <div class="pro2-foot">${whatsapp ? `<a class="btn btn-sec btn-sm" href="${esc(whatsapp)}" target="_blank" rel="noopener">WhatsApp</a>` : ''}
+            <a class="btn btn-primary btn-sm" href="conta.html?profissional=${encodeURIComponent(pro.id)}">Vincular à obra</a></div>
+    </article>`;
+}
+
+function renderDirectoryResults() {
+    if (!directoryProfessionals) return;
+    const service = serviceFilter.value;
+    const region = regionFilter.value;
+    const minimum = Number(ratingFilter.value);
+    const order = orderFilter.value;
+    const requested = atual.pedidoContext?.servicos || [];
+    const byRating = (a, b) => (b.avaliacao.media || 0) - (a.avaliacao.media || 0) ||
+        b.avaliacao.total - a.avaliacao.total || proNameOrder(a, b);
+    const matchesRequest = pro => requested.filter(item => pro.servicos.includes(item)).length;
+    const sort = {
+        rel: (a, b) => matchesRequest(b) - matchesRequest(a) || byRating(a, b),
+        nota: byRating,
+        qtd: (a, b) => b.avaliacao.total - a.avaliacao.total || byRating(a, b),
+    }[order];
+    const matches = directoryProfessionals.filter(pro => (!service || pro.servicos.includes(service)) &&
+        (!region || matchesDirectoryRegion(pro.regiao, region)) && (!minimum || (pro.avaliacao.media ?? 0) >= minimum)).sort(sort);
+    const featured = matches.filter(pro => pro.destaque && pro.regiao && pro.servicos.length);
+    const featuredIds = new Set(featured.map(pro => pro.id));
+    const regular = matches.filter(pro => !featuredIds.has(pro.id));
+    const filtered = Boolean(service || region || minimum || order !== "rel");
+    $("#pf-limpar").hidden = !filtered;
+    $("#pf-cont").textContent = matches.length + (matches.length === 1 ? " profissional" : " profissionais");
+    $("#pro-destaques").hidden = !featured.length;
+    $("#pro-destaques-title").textContent = region ? "Em destaque em " + regionFilter.selectedOptions[0].textContent : "Em destaque";
+    $("#pro-destaques-lista").innerHTML = featured.map(pro => directoryCard(pro, true)).join("");
+    $("#pro-todos").hidden = !regular.length && featured.length > 0;
+    $("#dico-directory").innerHTML = regular.length ? regular.map(pro => directoryCard(pro, false)).join("") :
+        `<div class="card empty pro-empty"><img src="assets/dico_pensativo.png" width="84" alt=""><h3>${filtered ? 'Nenhum profissional encontrado' : 'Ainda não há profissionais cadastrados'}</h3>${filtered ? '<p class="muted">Experimente ajustar os filtros.</p>' : ''}</div>`;
+}
 
 async function renderDicoDirectory() {
-    const directory = document.querySelector("#dico-directory");
-    directory.textContent = "Carregando profissionais…";
+    const request = ++directoryRequest;
+    if (!directoryProfessionals) $("#dico-directory").textContent = "Carregando profissionais…";
     try {
         const response = await fetch("/api/dico/profissionais");
         if (!response.ok) throw new Error();
         const professionals = await response.json();
-        directory.replaceChildren();
-        if (!professionals.length) directory.textContent = "Ainda não há profissionais com conta no Dico.";
-        for (const pro of professionals) {
-            const card = document.createElement("article");
-            card.className = "dico-directory-card stack";
-            const name = document.createElement("h3");
-            name.textContent = pro.nome;
-            const reputation = document.createElement("p");
-            const { media, total } = pro.avaliacao;
-            reputation.textContent = total ? "★ " + media.toLocaleString("pt-BR", { maximumFractionDigits: 1 }) + " de 5 · " + total + (total === 1 ? " avaliação" : " avaliações") : "Sem avaliações";
-            const link = document.createElement("a");
-            link.className = "btn btn-sec";
-            link.href = "conta.html?profissional=" + encodeURIComponent(pro.id);
-            link.textContent = "Vincular à obra";
-            card.append(name, reputation, link);
-            directory.append(card);
-        }
+        if (request !== directoryRequest) return;
+        directoryProfessionals = professionals;
+        renderDirectoryResults();
     } catch {
-        directory.textContent = "Não foi possível carregar os profissionais com conta.";
+        if (request === directoryRequest && !directoryProfessionals) $("#dico-directory").textContent = "Não foi possível carregar a rede de profissionais.";
     }
 }
+
+const initialView = location.hash.slice(1);
+const linkedViews = ["profissionais", "novaobra", "obra", "gastos"];
+go(linkedViews.includes(initialView) ? initialView : "inicio", false, { focusContent: false });
+if (initialView === "inicio-taxa") $("#inicio-taxa").click();
