@@ -268,8 +268,32 @@ function passo(n) {
         w.hidden = true;
         return
     } w.hidden = false;
-    w.querySelector("ol").innerHTML = PASSOS.map((t, i) => `<li class="${i+1<n?"feito":i+1===n?"agora":""}" ${i+1===n?'aria-current="step"':""}><span class="n">${i+1<n?"✓":i+1}</span>${t}</li>`).join("")
+    w.querySelector("ol").innerHTML = PASSOS.map((titulo, i) => {
+        const numero = i + 1;
+        const conteudo = `<span class="n" aria-hidden="true">${numero < n ? "✓" : numero}</span>${titulo}`;
+        const navegavel = viewAtual === "comodo" && numero >= 2 && numero <= 4 && numero !== n;
+        return `<li class="${numero < n ? "feito" : numero === n ? "agora" : ""}" ${numero === n ? 'aria-current="step"' : ""}>${navegavel ? `<button type="button" data-etapa="${numero - 1}">${conteudo}</button>` : conteudo}</li>`;
+    }).join("");
 }
+$("#workflow").addEventListener("click", e => {
+    const botao = e.target.closest("[data-etapa]");
+    if (!botao) return;
+    const destino = Number(botao.dataset.etapa);
+    if (destino < atual.etapa) {
+        etapa(destino);
+        return;
+    }
+    while (atual.etapa < destino) {
+        const anterior = atual.etapa;
+        $(`#f-c${anterior} [data-submit]`).click();
+        if (atual.etapa === anterior) {
+            if (!$("#v-comodo").contains(document.activeElement)) {
+                $(`#f-c${anterior} input`).focus();
+            }
+            break;
+        }
+    }
+});
 const views = ["inicio", "novaobra", "obra", "comodo", "resultado", "gastos", "profissionais"];
 let hist = [], viewAtual = "inicio";
 function go(v, back, { focusContent = true } = {}) {
@@ -290,9 +314,7 @@ function go(v, back, { focusContent = true } = {}) {
     views.forEach(x => $("#v-" + x).hidden = x !== v);
     const prototypeChrome = v === "inicio" || v === "profissionais";
     $("#inicio-nav").hidden = !prototypeChrome;
-    $("#inicio-footer").hidden = !prototypeChrome;
     $("#app-nav").hidden = prototypeChrome;
-    $("#app-footer").hidden = prototypeChrome;
     document.querySelectorAll("nav.top button").forEach(b => b.setAttribute("aria-current", String(b.dataset.go === v ||((v === "comodo" || v === "resultado") && b.dataset.go === "obra"))));
     passo( {
         novaobra: 1, resultado: atual.modo === "sug" ? 6: 5, gastos: 7
@@ -504,6 +526,7 @@ function novoComodo() {
 }
 function etapa(n) {
     atual.etapa = n;
+    if (n === 3) mostrarDetalhes();
     ["#f-c1", "#f-c2", "#f-c3"].forEach((f, i) => $(f).hidden = i !== n - 1);
     passo(n + 1);
     resumoComodo();
@@ -573,6 +596,9 @@ onSubmit("#f-c2", () => {
     atual.rascunho.medidas = {
         l, c, a, portas, janelas, ap, aj
     };
+    etapa(3);
+});
+function mostrarDetalhes() {
     const S = atual.rascunho.servicos;
     $("#d-pintura").hidden = !(S.includes("paredes") || S.includes("teto"));
     $("#d-massa").hidden = ! S.includes("massa");
@@ -581,8 +607,7 @@ onSubmit("#f-c2", () => {
     $("#d-rodape").hidden = ! S.includes("rodape");
     const vis = [...document.querySelectorAll("#f-c3 .subsec")].filter(x => ! x.hidden);
     vis.forEach((x, i) => x.style.cssText = i === 0 ? "border-top:0;padding-top:0;margin-top:0": "");
-    etapa(3);
-});
+}
 $("#c2-voltar").onclick =() => etapa(1);
 $("#c3-voltar").onclick =() => etapa(2);
 $("#d-cor").addEventListener("change", e => {
@@ -628,6 +653,7 @@ onSubmit("#f-c3", () => {
     calcular(r);
     save();
     atual.comodoId = r.id;
+    atual.rascunho = structuredClone(r);
     atual.modo = "res";
     go("resultado");
 });
@@ -701,7 +727,7 @@ function renderResultado() {
     const topComodo = recComodo.resultados.slice(0,3);
     const proCard = `<div class="card"><div class="row between" style="margin-bottom:14px"><div><h2>Profissionais recomendados para sua obra</h2><p class="muted small">Sugestões baseadas nas informações cadastradas para ${esc(c.servicos.map(s=>SERVNOME[s]).join(", "))}. Confirme qualificações e disponibilidade antes de contratar.</p></div><div class="row"><button class="btn btn-sec" type="button" id="b-ver-reco-pro">Ver recomendações completas</button><button class="btn-ghost" type="button" data-go="profissionais">Abrir profissionais</button></div></div>${topComodo.length?renderRecoCardsCompactos(topComodo,pedidoComodo):`<div class="warn-box">Ainda não há profissionais compatíveis cadastrados para esta necessidade. Você pode cadastrar profissionais ou usar "Pensando em algo mais?" para organizar sua solicitação.</div>`}</div>`;
     el.innerHTML = `${sug?opc:lista}${kpi}<div class="card"><h2>Consultar preços na internet</h2><p class="muted">Pesquise anúncios e confira embalagem, rendimento e frete antes da compra. O orçamento acima usa preços ilustrativos.</p><div class="row">${R.itens.map(i=>`<a class="btn btn-sec" href="precos.html?categoria=${encodeURIComponent(i.cat)}" target="_blank" rel="noopener">Pesquisar ${esc(NOMEMAT[i.cat])} ↗</a>`).join('')}</div></div>${proCard}
- <div class="actions" style="border:0;margin-top:0;padding-top:0">${sug?`<button class="btn btn-sec" type="button" id="b-volta">Voltar ao resultado</button><button class="btn btn-primary" type="button" id="b-salvar">Próximo: salvar no orçamento</button>`:`<div class="row"><button class="btn btn-sec" type="button" id="b-editar">Editar medidas</button><button class="btn-ghost" type="button" id="b-concluir">${c.concluido?"✓ Cômodo concluído":"Concluir este cômodo"}</button></div><button class="btn btn-primary" type="button" id="b-sug">Próximo: ver opções mais baratas</button>`}</div>`;
+ <div class="actions" style="border:0;margin-top:0;padding-top:0">${sug?`<button class="btn btn-sec" type="button" id="b-volta">Voltar ao resultado</button><button class="btn btn-primary" type="button" id="b-salvar">Próximo: salvar no orçamento</button>`:`<div class="row"><button class="btn btn-sec" type="button" id="b-voltar-detalhes">← Voltar aos detalhes</button><button class="btn btn-sec" type="button" id="b-editar">Editar medidas</button><button class="btn-ghost" type="button" id="b-concluir">${c.concluido?"✓ Cômodo concluído":"Concluir este cômodo"}</button></div><button class="btn btn-primary" type="button" id="b-sug">Próximo: ver opções mais baratas</button>`}</div>`;
     el.querySelectorAll("[data-usar]").forEach(b => b.onclick =() => {
         const [cat, id] = b.dataset.usar.split("|");
         c.escolhas [cat] = id;
@@ -729,12 +755,14 @@ function renderResultado() {
         toast("Lista salva no orçamento da obra.");
         go("gastos")
     });
-    on("#b-editar", () => {
+    const editar = n => {
         atual.rascunho = structuredClone(c);
         preencherEdicao(atual.rascunho);
         go("comodo");
-        etapa(2)
-    });
+        etapa(n);
+    };
+    on("#b-editar", () => editar(2));
+    on("#b-voltar-detalhes", () => editar(3));
     on("#b-concluir", () => concluir(c));
     on("#b-ver-reco-pro", () => { atual.pedidoContext = { ...pedidoComodo, descricao: (pedidoComodo.descricao||"") }; go("profissionais"); });
 }

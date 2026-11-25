@@ -238,8 +238,8 @@
                                 </div>
                             </div>
                             <div class="actions">
-                                <button class="btn btn-sec" type="button" data-go="obra">Voltar</button>
-                                <button class="btn btn-primary" type="button" data-submit>Continuar</button>
+                                <button class="btn btn-sec" type="button" data-go="obra">← Voltar à obra</button>
+                                <button class="btn btn-primary" type="button" data-submit>Avançar para medidas →</button>
                             </div>
                         </form>
                         <form id="f-c2" class="card" novalidate hidden>
@@ -311,8 +311,8 @@
                             <p class="hint-err" id="e-medidas" role="alert" style="margin-top:12px">
                             </p>
                             <div class="actions">
-                                <button class="btn btn-sec" type="button" id="c2-voltar">Voltar</button>
-                                <button class="btn btn-primary" type="button" data-submit>Continuar</button>
+                                <button class="btn btn-sec" type="button" id="c2-voltar">← Voltar aos serviços</button>
+                                <button class="btn btn-primary" type="button" data-submit>Avançar para detalhes →</button>
                             </div>
                         </form>
                         <form id="f-c3" class="card" novalidate hidden>
@@ -514,7 +514,7 @@
                             <p class="hint-err" id="e-det" role="alert" style="margin-top:12px">
                             </p>
                             <div class="actions">
-                                <button class="btn btn-sec" type="button" id="c3-voltar">Voltar</button>
+                                <button class="btn btn-sec" type="button" id="c3-voltar">← Voltar às medidas</button>
                                 <button class="btn btn-primary" type="button" data-submit>Calcular materiais</button>
                             </div>
                         </form>
@@ -637,24 +637,13 @@
                 </details>
             </section>
         </main>
-        <footer class="site" id="inicio-footer" hidden><div class="ft">
+        <footer class="site" id="inicio-footer"><div class="ft">
         <div class="ft-brand"><div class="ft-logo"><img src="assets/dico_icone_app.png" width="40" height="40" alt="">Dico</div><p>Obra sem susto e sem desperdício: a conta certa antes da compra.</p><div class="ft-ods"><span>ODS 11</span><span>ODS 12</span><span>ODS 13</span></div></div>
         <div><h4>Para quem reforma</h4><ul><li><button type="button" data-nova-obra>Começar uma obra</button></li><li><button type="button" data-go="obra">Minha obra</button></li><li><button type="button" data-go="gastos">Meus gastos</button></li><li><button type="button" data-go="profissionais">Encontrar profissionais</button></li><li><a href="calculadora.html" target="_blank" rel="noopener">Cálculo rápido ↗</a></li><li><a href="precos.html" target="_blank" rel="noopener">Pesquisar preços ↗</a></li></ul></div>
         <div><h4>Para profissionais</h4><ul><li><button type="button" data-entrar="pro-cadastro">Cadastrar grátis</button></li><li><button type="button" data-entrar="pro">Entrar no painel</button></li><li><button type="button" id="inicio-taxa">Como funciona o percentual</button></li></ul></div>
         <div><h4>O projeto</h4><ul><li>TCC · Desenvolvimento Web</li><li>Instituto Percorre · 2026</li><li><a href="https://tcc-percorre.onrender.com" target="_blank" rel="noopener">Site no ar ↗</a></li></ul></div>
         </div>
         <div class="ft-bottom"><span>© 2026 Dico · Protótipo do TCC</span><span>Cálculos e preços são estimativas de exemplo e não substituem a orientação de um profissional. Seus dados ficam salvos só neste navegador.</span></div></footer>
-        <footer class="dico-footer" id="app-footer">
-            <div class="row between">
-                <strong>Dico · Projeto de TCC</strong>
-                <nav class="row" aria-label="Rodapé">
-                    <a href="conta.html?tipo=cliente">Área do cliente</a>
-                    <a href="conta.html?tipo=profissional">Área do profissional</a>
-                    <a href="precos.html">Pesquisar preços</a>
-                </nav>
-            </div>
-            <p>Os cálculos são estimativas. As obras e os gastos ficam neste navegador. Contas, convites e avaliações são salvos no servidor.</p>
-        </footer>
         <dialog id="dlg">
             <div class="stack" id="dlg-body">
             </div>

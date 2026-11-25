@@ -27,11 +27,6 @@
 .top .account-link { background: var(--laranja-bg); color: var(--floresta); }
 .dico-spot { object-fit: contain; flex-shrink: 0; }
 
-footer.dico-footer { max-width: none; background: var(--floresta); color: #d5e1d9; }
-.dico-footer > * { max-width: 1072px; margin: 0 auto; }
-.dico-footer p { margin-top: 12px; }
-.dico-footer strong { color: white; font: 600 1.35rem var(--display); }
-.dico-footer a { color: white; }
 
 .auth { display: grid; grid-template-columns: .9fr 1.1fr; background: var(--papel); border: 1px solid var(--linha); border-radius: 26px; overflow: hidden; box-shadow: var(--sombra); }
 .auth-art { display: flex; flex-direction: column; gap: 16px; padding: 40px 40px 0; background: var(--floresta); color: #d5e1d9; }
@@ -212,6 +207,21 @@ main {
 
 .wf li:last-child::after {
     display: none;
+}
+
+.wf button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 0 4px;
+    border: 0;
+    background: transparent;
+    color: var(--floresta);
+    font: inherit;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
 }
 
 .wf .n {
