@@ -150,6 +150,7 @@ function uso(tipo, c) {
 }
 function necessidades(c) {
     const m = c.medidas, d = c.detalhes, S = c.servicos, ns = [];
+    const rendimentos = c.rendimentos || {};
     const ap = Calc.areaParedes(m.l, m.c, m.a, m.portas, m.janelas, m.ap, m.aj), apiso = Calc.areaPiso(m.l, m.c);
     const altRev = S.includes("revest") ? Math.min(d.rAlt, m.a): 0;
     const aRev = altRev ? Math.max(0, 2 *(m.l + m.c) * altRev - m.portas * 0.8 * Math.min(2.1, altRev) - m.janelas * Math.max(0, Math.min(m.aj, (altRev - 1.1) * 1.2))): 0;
@@ -167,16 +168,16 @@ function necessidades(c) {
     const dem = d.cor ? 3: d.demaos;
     if (areaPint > 0) {
         ns.push( {
-            cat: "tinta", qtd: p => areaPint * dem / p.rend, como:  [...form, `Tinta: ${fmt(areaPint)} m² × ${dem} demãos ÷ rendimento do produto (m² por litro)`]
+            cat: "tinta", qtd: p => areaPint * dem / (rendimentos.tinta ?? p.rend), como:  [...form, `Tinta: ${fmt(areaPint)} m² × ${dem} demãos ÷ ${rendimentos.tinta ? `${fmt(rendimentos.tinta, 3)} m²/L por demão` : "rendimento de referência (m²/L por demão)"}`]
         });
         if (d.nova) ns.push( {
-            cat: "selador", qtd: p => areaPint / p.rend, como:  [`Selador: ${fmt(areaPint)} m² ÷ rendimento do produto, 1 demão`]
+            cat: "selador", qtd: p => areaPint / (rendimentos.selador ?? p.rend), como:  [`Selador: ${fmt(areaPint)} m² ÷ ${rendimentos.selador ? `${fmt(rendimentos.selador, 3)} m²/L por demão` : "rendimento de referência (m²/L por demão)"}, 1 demão`]
         });
     }
     if (S.includes("massa")) {
         const a = S.includes("paredes") || ! S.includes("teto") ? aParPint +(S.includes("teto") ? apiso: 0): apiso;
         ns.push( {
-            cat: "massa", qtd: p => a * p.cons * d.massaDem, como:  [`Massa corrida: ${fmt(a)} m² × ${fmt(PADROES.massaKgM2,1)} kg/m² × ${d.massaDem} demãos`]
+            cat: "massa", qtd: p => a * (rendimentos.massa ?? p.cons) * d.massaDem, como:  [`Massa corrida: ${fmt(a)} m² × ${rendimentos.massa ? `${fmt(rendimentos.massa, 3)} kg/m² por demão` : "consumo de referência (kg/m² por demão)"} × ${d.massaDem} demãos`]
         })
     }
     let areaCer = 0;
@@ -218,7 +219,7 @@ function necessidades(c) {
 function opcoes(n, u) {
     return PRODUTOS.filter(p => p.cat === n.cat && p.uso.includes(u)).map(p => {
         let custo, texto, qtd;
-        if (n.caixas) {
+        if (n.caixas != null) {
             qtd = n.caixas * n.m2;
             custo = n.barras ? n.caixas * p.emb [0].p: qtd * p.emb [0].p;
             texto = n.barras ? `${n.caixas} barras de ${fmt(n.m2)} m`: `${n.caixas} caixas · ${fmt(qtd,1)} m²`
@@ -234,6 +235,12 @@ function opcoes(n, u) {
         };
     }).sort((a, b) => a.custo - b.custo).slice(0, 3);
 }
+function opcaoPorEmbalagem(n, referencia, preco, id, nome) {
+    const unidades = n.caixas ?? Math.ceil(referencia.qtd / preco.tamanho - 1e-9);
+    const tipo = n.barras ? "barra" : n.caixas != null ? "caixa" : "embalagem";
+    const texto = n.caixas != null ? referencia.texto : `${unidades} ${unidades === 1 ? "embalagem" : "embalagens"} de ${fmt(preco.tamanho)} ${UNID[n.cat]}`;
+    return { id, nome, linha: `${brl(preco.valor)} por ${tipo}`, custo: Math.round(unidades * preco.valor * 100) / 100, texto, qtd: referencia.qtd };
+}
 function calcular(c) {
     const u = uso(c.tipo, c);
     c.escolhas = c.escolhas || {
@@ -241,7 +248,22 @@ function calcular(c) {
     const itens = necessidades(c).map(n => {
         const ops = opcoes(n, u);
         if (! ops.length) return null;
-        const s = ops.find(o => o.id === c.escolhas [n.cat]) || ops.find(o => o.linha === "Intermediária") || ops [0];
+        const referencia = ops.find(o => o.linha === "Intermediária") || ops[0];
+        const preco = c.precos?.[n.cat];
+        let padrao = referencia;
+        if (preco) {
+            padrao = opcaoPorEmbalagem(n, referencia, preco, "manual", "Preço informado");
+            ops.push(padrao);
+        }
+        const oferta = c.ofertasPrecos?.[n.cat];
+        if (oferta && (n.caixas == null || oferta.tamanho === n.m2) &&
+            (n.cat !== "tinta" || (
+                oferta.tamanho === embalagemParaBusca(c, n).tamanho &&
+                correspondeATinta(oferta.titulo, c.detalhes.acab, c.detalhes.corTinta, tipoTintaSalvo(c))
+            ))) {
+            ops.push(opcaoPorEmbalagem(n, referencia, oferta, "oferta", oferta.titulo));
+        }
+        const s = ops.find(o => o.id === c.escolhas[n.cat]) || padrao;
         c.escolhas [n.cat] = s.id;
         return {
             cat: n.cat, como: n.como, ops, sel: s.id
@@ -253,7 +275,8 @@ function calcular(c) {
         if (c.pagos [i.cat] != null) i.pago = c.pagos [i.cat]
     });
     c.resultado = {
-        itens, total: itens.reduce((s, i) => s +(i.pago != null ? i.pago: i.ops.find(o => o.id === i.sel).custo), 0), minimo: itens.reduce((s, i) => s + i.ops [0].custo, 0)
+        itens, total: itens.reduce((s, i) => s + (i.pago ?? i.ops.find(o => o.id === i.sel).custo), 0),
+        minimo: itens.reduce((s, i) => s + (i.pago ?? Math.min(...i.ops.map(o => o.custo))), 0)
     };
 }
 /* ================= NAVEGAÇÃO E PASSO A PASSO ================= */
@@ -519,6 +542,7 @@ function novoComodo() {
     };
     $("#outro-wrap").hidden = true;
     ["#f-c1", "#f-c2", "#f-c3"].forEach(f => $(f).reset());
+    preencherPrecos();
     ["#e-serv", "#e-medidas", "#e-det"].forEach(x => $(x).textContent = "");
     document.querySelectorAll("#v-comodo input").forEach(i => i.removeAttribute("aria-invalid"));
     go("comodo");
@@ -605,9 +629,60 @@ function mostrarDetalhes() {
     $("#d-piso").hidden = ! S.includes("piso");
     $("#d-revest").hidden = ! S.includes("revest");
     $("#d-rodape").hidden = ! S.includes("rodape");
+    mostrarPrecos();
     const vis = [...document.querySelectorAll("#f-c3 .subsec")].filter(x => ! x.hidden);
     vis.forEach((x, i) => x.style.cssText = i === 0 ? "border-top:0;padding-top:0;margin-top:0": "");
 }
+const TIPOS_PRECO = {
+    tinta: "embalagem", selador: "embalagem", massa: "embalagem", piso: "caixa",
+    azulejo: "caixa", argamassa: "embalagem", rejunte: "embalagem", rodape: "barra"
+};
+const ROTULOS_RENDIMENTO = {
+    tinta: "Rendimento (m²/L por demão)",
+    selador: "Rendimento (m²/L por demão)",
+    massa: "Consumo (kg/m² por demão)"
+};
+const camposPrecos = $("#d-precos-campos");
+camposPrecos.innerHTML = Object.entries(TIPOS_PRECO).map(([cat, tipo]) => `
+    <fieldset class="card" data-preco-material="${cat}">
+        <legend>${NOMEMAT[cat]}</legend>
+        <div class="fields">
+            <div class="field"><label class="lbl" for="preco-${cat}">Preço por ${tipo} (R$)</label>
+                <input id="preco-${cat}" inputmode="decimal" placeholder="Ex.: 49,90"></div>
+            ${tipo === "embalagem" ? `<div class="field"><label class="lbl" for="tamanho-${cat}">Tamanho da embalagem (${UNID[cat]})</label>
+                <input id="tamanho-${cat}" inputmode="decimal" placeholder="Ex.: ${UNID[cat] === "L" ? "3,6" : "5"}"></div>` : ""}
+            ${ROTULOS_RENDIMENTO[cat] ? `<div class="field"><label class="lbl" for="rendimento-${cat}">${ROTULOS_RENDIMENTO[cat]} <span class="opc">(opcional)</span></label>
+                <input id="rendimento-${cat}" inputmode="decimal" placeholder="Ex.: ${cat === "massa" ? "0,5" : "10"}"></div>` : ""}
+        </div>
+        <a class="btn-ghost" href="precos.html?categoria=${encodeURIComponent(cat)}" target="_blank" rel="noopener">Pesquisar ${NOMEMAT[cat]} ↗</a>
+    </fieldset>`).join("");
+
+function mostrarPrecos() {
+    const servicos = atual.rascunho.servicos;
+    const pintura = servicos.includes("paredes") || servicos.includes("teto");
+    const ceramica = servicos.includes("piso") || servicos.includes("revest");
+    const ativos = {
+        tinta: pintura, selador: pintura && $("#d-nova").checked, massa: servicos.includes("massa"),
+        piso: servicos.includes("piso"), azulejo: servicos.includes("revest"), argamassa: ceramica,
+        rejunte: ceramica, rodape: servicos.includes("rodape")
+    };
+    camposPrecos.querySelectorAll("[data-preco-material]").forEach(campo => {
+        campo.hidden = !ativos[campo.dataset.precoMaterial];
+    });
+}
+function preencherPrecos(precos = {}, rendimentos = {}, tamanhos = {}) {
+    for (const cat of Object.keys(TIPOS_PRECO)) {
+        const preco = precos[cat];
+        $(`#preco-${cat}`).value = preco ? fmt(preco.valor) : "";
+        const tamanho = $(`#tamanho-${cat}`);
+        if (tamanho) tamanho.value = String(tamanhos[cat] ?? preco?.tamanho ?? "").replace(".", ",");
+        const rendimento = $(`#rendimento-${cat}`);
+        if (rendimento) rendimento.value = String(rendimentos[cat] ?? "").replace(".", ",");
+    }
+}
+$("#d-nova").addEventListener("change", mostrarPrecos);
+$("#d-cor-tinta").addEventListener("input", e => e.target.removeAttribute("aria-invalid"));
+camposPrecos.addEventListener("input", e => e.target.removeAttribute("aria-invalid"));
 $("#c2-voltar").onclick =() => etapa(1);
 $("#c3-voltar").onclick =() => etapa(2);
 $("#d-cor").addEventListener("change", e => {
@@ -619,6 +694,14 @@ onSubmit("#f-c3", () => {
     const d = {
         demaos: + $("#d-demaos").value, acab: $("#d-acab").value, cor: $("#d-cor").checked, nova: $("#d-nova").checked, massaDem: + $("#d-massa-dem").value, peca: $("#d-peca").value, assent: $("#d-assent").value, rPeca: $("#r-peca").value, rAlt: 0
     };
+    if (S.includes("paredes") || S.includes("teto")) {
+        d.tipoTinta = $("#d-tipo-tinta").value;
+        const campoCor = $("#d-cor-tinta");
+        d.corTinta = campoCor.value.trim().replace(/\s+/g, " ");
+        if (d.corTinta && !/^[\p{L}\p{M}\p{N} -]{1,40}$/u.test(d.corTinta)) {
+            err = { el: campoCor, erro: "Informe a cor da tinta com letras, números, espaços ou hífens." };
+        }
+    }
     const chk =(arr) => {
         err = err || arr.find(x => x && x.erro);
         return arr
@@ -638,15 +721,53 @@ onSubmit("#f-c3", () => {
         const [b] = chk([vm("#d-barra", 1, 4, "Digite o comprimento da barra em metros, por exemplo 2,40.")]);
         d.barra = b
     }
+    if (!err) {
+        const precos = {};
+        const rendimentos = {};
+        const tamanhosEmbalagem = {};
+        for (const { cat } of necessidades({ ...r, detalhes: d })) {
+            const rendimento = $(`#rendimento-${cat}`);
+            if (rendimento?.value.trim()) {
+                const valor = num(rendimento.value);
+                const consumo = cat === "massa";
+                const minimo = consumo ? 0.01 : 1;
+                const maximo = consumo ? 10 : 100;
+                if (!Number.isFinite(valor) || valor < minimo || valor > maximo) {
+                    err = { el: rendimento, erro: `${ROTULOS_RENDIMENTO[cat]} de ${NOMEMAT[cat]} deve ficar entre ${consumo ? "0,01" : "1"} e ${maximo}.` };
+                    break;
+                }
+                rendimentos[cat] = valor;
+            }
+            const campo = $(`#preco-${cat}`);
+            const temPreco = Boolean(campo.value.trim());
+            const embalagem = $(`#tamanho-${cat}`);
+            const tamanho = embalagem ? num(embalagem.value) : null;
+            if (embalagem && (temPreco || embalagem.value.trim())) {
+                if (!Number.isFinite(tamanho) || tamanho < 0.001) {
+                    err = { el: embalagem, erro: `Informe o tamanho da embalagem de ${NOMEMAT[cat]} em ${UNID[cat]} (mínimo de 0,001).` };
+                    break;
+                }
+                tamanhosEmbalagem[cat] = tamanho;
+            }
+            if (!temPreco) continue;
+            const valor = num(campo.value);
+            if (!Number.isFinite(valor) || valor < 0.01 || valor > 1000000) {
+                err = { el: campo, erro: `Informe um preço entre R$ 0,01 e R$ 1.000.000,00 para ${NOMEMAT[cat]}.` };
+                break;
+            }
+            precos[cat] = { valor: Math.round(valor * 100) / 100, tamanho };
+        }
+        if (!err) Object.assign(r, { precos, rendimentos, tamanhosEmbalagem });
+    }
     if (err) {
         $("#e-det").textContent = err.erro;
+        err.el.setAttribute("aria-invalid", "true");
         err.el.focus();
         return
     }
     $("#e-det").textContent = "";
     r.detalhes = d;
-    r.escolhas = {
-    };
+    r.escolhas = Object.fromEntries(Object.entries(r.escolhas || {}).filter(([, id]) => id === "oferta"));
     const o = obraAtual();
     o.comodos = o.comodos.filter(x => x.id !== r.id);
     o.comodos.push(r);
@@ -673,7 +794,9 @@ function preencherEdicao(comodo) {
         "m-porta-a": fmt(medidas.ap),
         "m-janela-a": fmt(medidas.aj),
         "d-demaos": detalhes.demaos,
-        "d-acab": detalhes.acab,
+        "d-acab": detalhes.acab ?? "",
+        "d-tipo-tinta": tipoTintaSalvo(comodo),
+        "d-cor-tinta": detalhes.corTinta || "",
         "d-massa-dem": detalhes.massaDem,
         "d-peca": detalhes.peca,
         "d-m2": fmt(detalhes.m2 || 2.5),
@@ -696,9 +819,181 @@ function preencherEdicao(comodo) {
     });
     $("#d-cor").checked = detalhes.cor;
     $("#d-nova").checked = detalhes.nova;
+    preencherPrecos(comodo.precos, comodo.rendimentos, comodo.tamanhosEmbalagem);
     $("#outro-wrap").hidden = comodo.tipo !== "outros";
 }
 /* ================= RESULTADO E OPÇÕES ================= */
+const consultasOfertas = new WeakMap();
+
+function tipoTintaSalvo(c) {
+    const tipo = c.detalhes.tipoTinta;
+    return tipo === "PVA" ? "Látex PVA" : tipo || "Acrílica";
+}
+
+function embalagemParaBusca(c, n) {
+    const tipo = TIPOS_PRECO[n.cat];
+    const tamanho = n.caixas != null ? n.m2 : c.tamanhosEmbalagem?.[n.cat] ?? c.precos?.[n.cat]?.tamanho ??
+        PRODUTOS.find(p => p.cat === n.cat && p.uso.includes(uso(c.tipo, c)))?.emb[0].t;
+    return {
+        tipo, tamanho, unidade: UNID[n.cat],
+        tipoTinta: n.cat === "tinta" ? tipoTintaSalvo(c) : "",
+        acabamento: n.cat === "tinta" ? c.detalhes.acab : "",
+        cor: n.cat === "tinta" ? c.detalhes.corTinta : ""
+    };
+}
+
+function normalizarTermosTinta(texto) {
+    const cores = { branca: "branco", preta: "preto", amarela: "amarelo", vermelha: "vermelho", cinzenta: "cinzento" };
+    return texto.toLowerCase().normalize("NFD").replace(/\p{M}/gu, "")
+        .replace(/semi[\s-]+brilho/g, "semibrilho")
+        .replace(/[^\p{L}\p{N}]+/gu, " ").trim().split(" ")
+        .map(termo => Object.hasOwn(cores, termo) ? cores[termo] : termo).join(" ");
+}
+
+function acabamentosNoTitulo(texto) {
+    return texto.match(/\b(?:fosc[oa]|acetinad[oa]|semibrilho)\b/g) || [];
+}
+
+function correspondeATinta(titulo, acabamento, cor, tipoTinta) {
+    const texto = normalizarTermosTinta(titulo);
+    const tipo = normalizarTermosTinta(tipoTinta || "");
+    const tipos = {
+        acrilica: /\bacrilic[ao]s?\b/,
+        "latex pva": /\bpva\b/,
+        "esmalte sintetico": /^(?=.*\besmaltes?\b)(?=.*\bsintetic[ao]s?\b)/,
+        epoxi: /\bepoxi\b/,
+        "borracha liquida": /\bborracha liquida\b/
+    };
+    if (Object.hasOwn(tipos, tipo) && !tipos[tipo].test(texto)) return false;
+    const acabamentos = acabamentosNoTitulo(texto);
+    if (acabamento) {
+        const esperado = normalizarTermosTinta(acabamento);
+        if (!acabamentos.length || acabamentos.some(a => a.replace(/(fosc|acetinad)a$/, "$1o") !== esperado)) return false;
+    }
+    if (!cor) return true;
+    const corNormalizada = normalizarTermosTinta(cor);
+    if (corNormalizada === "branco" && /\bbranco (?:gelo|neve|polar|marfim)\b/.test(texto)) return false;
+    return Boolean(corNormalizada) && ` ${texto} `.includes(` ${corNormalizada} `);
+}
+
+function selecionarFaixasDePreco(ofertas, embalagem) {
+    const { tipo, tamanho, unidade, acabamento, cor, tipoTinta } = embalagem;
+    const medida = { "L": "l(?:itros?)?", "kg": "kg", "m²": "m[²2]", "m": "m(?:etros?)?(?![²2])" }[unidade];
+    const medidas = new RegExp(`(?:^|[^\\d.,])(\\d+(?:[.,]\\d+)?)\\s*${medida}(?=$|[^\\p{L}\\d])`, "giu");
+    const comparaveis = ofertas.filter(oferta => {
+        const titulo = oferta.title.toLowerCase();
+        if ((acabamento || cor || tipoTinta) && !correspondeATinta(titulo, acabamento, cor, tipoTinta)) return false;
+        if (/\b(?:kits?|combos?|fardos?|\d+\s*(?:unidades?|un|unid|peças?|caixas?|barras?))\b|\d+\s*[x×]\s*\d+(?:[.,]\d+)?\s*(?:kg|l)\b/u.test(titulo)) return false;
+        if (tipo === "embalagem" && /(?:por\s+|\/\s*)(?:kg\b|l\b|litros?\b|quilo\b)/u.test(titulo)) return false;
+        if (tipo === "caixa" && (!/\b(?:caixa|cx)\b/u.test(titulo) || /(?:por\s+|\/\s*)m[²2]/u.test(titulo))) return false;
+        if (tipo === "barra" && (!/\bbarra\b/u.test(titulo) || /(?:por\s+|\/\s*)(?:metro|m\b)/u.test(titulo))) return false;
+        const tamanhos = [...titulo.matchAll(medidas)].map(m => num(m[1]));
+        return tamanhos.length > 0 && tamanhos.every(t => Math.abs(t - tamanho) < 0.00001);
+    }).sort((a, b) => a.price - b.price);
+    const distintos = [...new Map(comparaveis.map(o => [o.price, o])).values()];
+    if (distintos.length < 2) return distintos.map(oferta => ({ oferta, faixa: "Menor preço encontrado", corFaixa: "b-ok" }));
+    const menor = { oferta: distintos[0], faixa: "Mais barato", corFaixa: "b-ok" };
+    const maior = { oferta: distintos.at(-1), faixa: "Faixa premium", corFaixa: "b-or" };
+    if (distintos.length === 2) return [menor, maior];
+    return [menor, { oferta: distintos[Math.floor((distintos.length - 1) / 2)], faixa: "Intermediário", corFaixa: "b-neu" }, maior];
+}
+
+function exibirOfertasMaterial(painel, consulta, selecionada) {
+    const status = painel.querySelector("[data-status-ofertas]");
+    const cards = painel.querySelector("[data-cards-ofertas]");
+    status.textContent = consulta?.mensagem || "";
+    const relacionados = consulta?.relacionadas?.length ? `
+        <details class="sopt ofertas-relacionadas">
+            <summary>Ver anúncios para conferir</summary>
+            <p class="muted small">${consulta.faixas?.length
+                ? "Estes anúncios correspondem aos demais critérios, mas o título não informa o acabamento."
+                : "Confira as características no anúncio antes de usar o preço no orçamento."}</p>
+            <ul>${consulta.relacionadas.map(oferta => `
+                <li><a href="${esc(oferta.link)}" target="_blank" rel="noopener">
+                    <span><strong>${esc(oferta.title)}</strong><small class="muted">${esc(oferta.store)}</small></span>
+                    <span class="num">${brl(oferta.price)} ↗</span>
+                </a></li>`).join("")}</ul>
+        </details>` : "";
+    if (!consulta?.faixas?.length) {
+        const material = NOMEMAT[painel.dataset.ofertasMaterial].toLocaleLowerCase("pt-BR");
+        cards.innerHTML = `<button class="sopt oferta-busca" type="button" data-buscar-ofertas ${consulta?.carregando ? "disabled" : ""}>
+            ${consulta?.carregando ? "Consultando ofertas…" : `Buscar ofertas de ${material}`}
+        </button>${relacionados}`;
+        return;
+    }
+    cards.innerHTML = consulta.faixas.map(({ oferta, faixa, corFaixa }, i) => {
+        const escolhida = selecionada?.link === oferta.link && selecionada?.valor === oferta.price && selecionada?.titulo === oferta.title;
+        return `
+        <article class="sopt oferta-card ${escolhida ? "sel" : ""}">
+            <div class="row oferta-badges">
+                <span class="badge ${corFaixa}">${faixa}</span>
+                ${escolhida ? '<span class="badge b-ok">✓ Escolhida</span>' : ""}
+            </div>
+            <h4>${esc(oferta.title)}</h4>
+            <p class="muted small">${esc(oferta.store)}</p>
+            <p class="oferta-preco"><strong class="price num">${brl(oferta.price)}</strong> <span class="muted small">por ${consulta.embalagem.tipo}</span></p>
+            <div class="oferta-subtotal">
+                <span class="muted small">Total para o cômodo <span class="oferta-frete">sem frete</span></span>
+                <strong class="num">${brl(consulta.unidades * oferta.price)}</strong>
+            </div>
+            <div class="row oferta-acoes">
+                ${escolhida ? "" : `<button class="btn ${corFaixa === "b-ok" ? "btn-primary" : "btn-sec"}" type="button" data-usar-oferta="${i}">Usar oferta</button>`}
+                <a class="btn-ghost" href="${esc(oferta.link)}" target="_blank" rel="noopener">Conferir anúncio ↗</a>
+            </div>
+        </article>`;
+    }).join("") + relacionados;
+}
+
+async function buscarOfertasMaterial(consultas, n, c, painel) {
+    const embalagem = embalagemParaBusca(c, n);
+    const { tipo, tamanho, unidade, acabamento, cor, tipoTinta } = embalagem;
+    const formato = `${tipo} de ${String(tamanho).replace(".", ",")} ${unidade}`;
+    const detalhes = [tipoTinta, acabamento, cor, tipo === "embalagem" ? "" : tipo, `${String(tamanho).replace(".", ",")} ${unidade}`].filter(Boolean).join(" ");
+    const criterios = [tipoTinta, acabamento, cor, formato].filter(Boolean).join(" · ");
+    const consulta = { embalagem, carregando: true, mensagem: "Consultando ofertas…" };
+    consultas.set(n.cat, consulta);
+    exibirOfertasMaterial(painel, consulta);
+    try {
+        const params = new URLSearchParams({ categoria: n.cat, detalhes });
+        const response = await fetch(`/api/precos?${params}`, { signal: AbortSignal.timeout(25000) });
+        if (!response.headers.get("content-type")?.includes("application/json")) {
+            throw new Error("A pesquisa está indisponível. Tente novamente pelo site servido pelo backend.");
+        }
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Não foi possível consultar as ofertas.");
+        if (data.demo) {
+            consulta.mensagem = "A API está em modo demonstração. A comparação exibe ofertas de lojas quando a consulta real estiver disponível.";
+        } else {
+            const ofertas = data.offers.filter(o => Number.isFinite(o.price) && o.price > 0 && /^https?:\/\//i.test(o.link));
+            consulta.faixas = selecionarFaixasDePreco(ofertas, embalagem);
+            const referencia = opcoes(n, uso(c.tipo, c));
+            const base = referencia.find(o => o.linha === "Intermediária") || referencia[0];
+            consulta.unidades = n.caixas ?? Math.ceil(base.qtd / tamanho - 1e-9);
+            if (consulta.faixas.length) {
+                consulta.mensagem = `${criterios}. A faixa premium indica o maior preço encontrado. Confira a embalagem e o frete no anúncio.`;
+                if (acabamento) {
+                    const semAcabamento = ofertas.filter(o => !acabamentosNoTitulo(normalizarTermosTinta(o.title)).length);
+                    consulta.relacionadas = selecionarFaixasDePreco(semAcabamento, { ...embalagem, acabamento: "" }).map(f => f.oferta);
+                }
+            } else if (ofertas.length) {
+                consulta.relacionadas = ofertas.slice(0, 3);
+                consulta.mensagem = `A API retornou anúncios, mas os títulos não confirmam todos os critérios: ${criterios}.`;
+            } else {
+                consulta.mensagem = `A API não retornou ofertas para ${criterios}. Confira os detalhes ou tente novamente.`;
+            }
+        }
+    } catch (error) {
+        consulta.mensagem = error.name === "TimeoutError" ? "A consulta demorou demais. Tente novamente." : error.message;
+    } finally {
+        consulta.carregando = false;
+        const painelAtual = $("#v-resultado").querySelector(`[data-ofertas-material="${n.cat}"]`);
+        if (painelAtual && obraAtual()?.comodos.find(item => item.id === atual.comodoId) === c) {
+            const selecionada = c.escolhas[n.cat] === "oferta" ? c.ofertasPrecos?.[n.cat] : null;
+            exibirOfertasMaterial(painelAtual, consulta, selecionada);
+        }
+    }
+}
+
 function renderResultado() {
     const o = obraAtual(), c = o && o.comodos.find(x => x.id === atual.comodoId);
     if (! c) {
@@ -708,35 +1003,62 @@ function renderResultado() {
     calcular(c);
     save();
     const R = c.resultado, econ = R.total - R.minimo, el = $("#v-resultado"), sug = atual.modo === "sug";
+    const temReferencia = R.itens.some(i => !["manual", "oferta"].includes(i.sel));
+    const notaPrecos = temReferencia
+        ? "O orçamento inclui preços de referência ilustrativos nas opções de catálogo selecionadas."
+        : "O orçamento usa os preços informados e as ofertas selecionadas.";
     const lista = `<div class="card"><div class="card-head" style="margin-bottom:8px"><span class="eyebrow">Passo 5 de 7</span><div class="row between"><h1>Você vai precisar</h1><span class="badge b-ok">✓ Material na medida</span></div><p class="muted">${esc(c.nome)} · ${c.servicos.map(s=>SERVNOME[s]).join(", ")}</p></div>
  <div class="tbl"><table class="mtable"><thead><tr><th>Material</th><th>Quantidade</th><th class="r">Custo</th></tr></thead><tbody>
  ${R.itens.map(i=>{const s=i.ops.find(o=>o.id===i.sel);return `<tr><td><p style="font-weight:700">${NOMEMAT[i.cat]}</p><p class="muted small">${esc(s.nome)} · ${s.linha}</p></td><td><p style="font-weight:600">${s.texto}</p><p class="muted small num">${fmt(s.qtd)} ${UNID[i.cat]} necessários</p></td><td class="r num" style="font-weight:700">${i.pago!=null?`${brl(i.pago)}<br><span class="badge b-ok" style="margin-top:4px">Valor pago</span>`:brl(s.custo)}</td></tr>`}).join("")}
  </tbody></table></div>
  <details class="calc"><summary>Como calculamos</summary><ul>${R.itens.flatMap(i=>i.como).map(t=>`<li>${esc(t)}</li>`).join("")}<li>Quantidades arredondadas para embalagens inteiras, na combinação mais barata.</li></ul></details></div>`;
     const kpi = `<div class="kpi"><div class="hl"><span class="small">Custo estimado do material</span><strong class="num">${brl(R.total)}</strong></div>
- <div><span class="small muted">Com as opções mais acessíveis</span><strong class="num">${brl(R.minimo)}</strong></div>
- <div><span class="small muted">Economia possível</span><strong class="num" style="color:var(--verde-ok)">${brl(Math.max(0,econ))}</strong></div></div>`;
-    const opc = `<div class="card"><div class="card-head"><span class="eyebrow">Passo 6 de 7</span><h1>Opções mais acessíveis</h1><p class="muted">Ordenadas pelo custo para cobrir o seu cômodo, não pelo preço da embalagem. ${FONTE}.</p></div><div class="stack" style="gap:26px">
- ${R.itens.map(i=>{const cur=i.ops.find(o=>o.id===i.sel).custo;return `<div><h3 style="margin-bottom:12px">${NOMEMAT[i.cat]}</h3><div class="sug">${i.ops.map((op,k)=>`<div class="sopt ${op.id===i.sel?"sel":""}">
- <div class="row between">${k===0?`<span class="badge b-ok">Mais acessível</span>`:`<span class="badge b-neu">${op.linha}</span>`}${op.id===i.sel?`<span class="small" style="font-weight:700;color:var(--laranja-escuro)">✓ Escolhida</span>`:""}</div>
- <p style="font-weight:700;margin-top:6px">${esc(op.nome)}</p><p class="muted small">${op.texto}</p><p class="price num">${brl(op.custo)}</p>
- ${op.id!==i.sel&&op.custo<cur?`<p class="small" style="color:var(--verde-ok);font-weight:700">Economiza ${brl(cur-op.custo)}</p>`:op.id!==i.sel?`<p class="small muted">${brl(op.custo-cur)} a mais</p>`:`<p class="small muted">&nbsp;</p>`}
- <div class="row" style="justify-content:space-between;margin-top:4px">${op.id!==i.sel?`<button class="btn btn-sec" style="min-height:40px;padding:0 14px" type="button" data-usar="${i.cat}|${op.id}">Usar esta</button>`:"<span></span>"}<a class="btn-ghost" href="https://www.google.com/search?tbm=shop&q=${encodeURIComponent(op.nome+" "+op.linha)}" target="_blank" rel="noopener">Ver nas lojas ↗</a></div></div>`).join("")}</div></div>`}).join("")}</div></div>`;
+ <div><span class="small muted">Menor total na comparação</span><strong class="num">${brl(R.minimo)}</strong></div>
+ <div><span class="small muted">Economia estimada na comparação</span><strong class="num" style="color:var(--verde-ok)">${brl(Math.max(0,econ))}</strong></div></div>`;
+    const opc = `<div class="card"><div class="card-head"><span class="eyebrow">Passo 6 de 7</span><h1>Opções mais acessíveis</h1></div><div class="stack" style="gap:26px">
+ ${R.itens.map(i=>`<section data-ofertas-material="${i.cat}">
+     <h3 style="margin-bottom:12px">${NOMEMAT[i.cat]}</h3>
+     <div class="sug" data-cards-ofertas></div>
+     <p class="muted small oferta-status" role="status" data-status-ofertas></p>
+     ${i.sel !== "manual" && c.precos?.[i.cat] ? '<button class="btn-ghost" type="button" data-usar-preco-manual>Usar preço informado em Detalhes</button>' : ""}
+ </section>`).join("")}</div></div>`;
     const pedidoComodo = montarPedidoProfissionais({ servicos: c.servicos.map(s => (typeof MAPA_SERVICO_COMODO!=="undefined"&&MAPA_SERVICO_COMODO[s]) || s), descricao: c.nome + " - " + c.servicos.map(s=>SERVNOME[s]).join(", "), ambiente: nomeTipo(c), regiao: "", comodoId: c.id, obraId: o.id });
     const recComodo = recomendarProfissionais(pedidoComodo);
     const topComodo = recComodo.resultados.slice(0,3);
     const proCard = `<div class="card"><div class="row between" style="margin-bottom:14px"><div><h2>Profissionais recomendados para sua obra</h2><p class="muted small">Sugestões baseadas nas informações cadastradas para ${esc(c.servicos.map(s=>SERVNOME[s]).join(", "))}. Confirme qualificações e disponibilidade antes de contratar.</p></div><div class="row"><button class="btn btn-sec" type="button" id="b-ver-reco-pro">Ver recomendações completas</button><button class="btn-ghost" type="button" data-go="profissionais">Abrir profissionais</button></div></div>${topComodo.length?renderRecoCardsCompactos(topComodo,pedidoComodo):`<div class="warn-box">Ainda não há profissionais compatíveis cadastrados para esta necessidade. Você pode cadastrar profissionais ou usar "Pensando em algo mais?" para organizar sua solicitação.</div>`}</div>`;
-    el.innerHTML = `${sug?opc:lista}${kpi}<div class="card"><h2>Consultar preços na internet</h2><p class="muted">Pesquise anúncios e confira embalagem, rendimento e frete antes da compra. O orçamento acima usa preços ilustrativos.</p><div class="row">${R.itens.map(i=>`<a class="btn btn-sec" href="precos.html?categoria=${encodeURIComponent(i.cat)}" target="_blank" rel="noopener">Pesquisar ${esc(NOMEMAT[i.cat])} ↗</a>`).join('')}</div></div>${proCard}
+    el.innerHTML = `${sug?opc:`${lista}${kpi}<div class="card"><h2>Consultar preços na internet</h2><p class="muted">${notaPrecos} Confira embalagem, rendimento e frete antes da compra.</p><div class="row">${R.itens.map(i=>`<a class="btn btn-sec" href="precos.html?categoria=${encodeURIComponent(i.cat)}" target="_blank" rel="noopener">Pesquisar ${esc(NOMEMAT[i.cat])} ↗</a>`).join('')}</div></div>`}${proCard}
  <div class="actions" style="border:0;margin-top:0;padding-top:0">${sug?`<button class="btn btn-sec" type="button" id="b-volta">Voltar ao resultado</button><button class="btn btn-primary" type="button" id="b-salvar">Próximo: salvar no orçamento</button>`:`<div class="row"><button class="btn btn-sec" type="button" id="b-voltar-detalhes">← Voltar aos detalhes</button><button class="btn btn-sec" type="button" id="b-editar">Editar medidas</button><button class="btn-ghost" type="button" id="b-concluir">${c.concluido?"✓ Cômodo concluído":"Concluir este cômodo"}</button></div><button class="btn btn-primary" type="button" id="b-sug">Próximo: ver opções mais baratas</button>`}</div>`;
-    el.querySelectorAll("[data-usar]").forEach(b => b.onclick =() => {
-        const [cat, id] = b.dataset.usar.split("|");
-        c.escolhas [cat] = id;
-        save();
-        const y = window.scrollY;
-        renderResultado();
-        window.scrollTo(0, y);
-        toast("Opção atualizada.")
-    });
+    if (sug) {
+        if (!consultasOfertas.has(c)) consultasOfertas.set(c, new Map());
+        const consultas = consultasOfertas.get(c);
+        const materiais = necessidades(c);
+        el.querySelectorAll("[data-ofertas-material]").forEach(painel => {
+            const cat = painel.dataset.ofertasMaterial;
+            const n = materiais.find(material => material.cat === cat);
+            const selecionada = c.escolhas[cat] === "oferta" ? c.ofertasPrecos?.[cat] : null;
+            exibirOfertasMaterial(painel, consultas.get(cat), selecionada);
+            painel.onclick = e => {
+                const botao = e.target.closest("[data-buscar-ofertas], [data-usar-oferta], [data-usar-preco-manual]");
+                if (!botao) return;
+                if (botao.hasAttribute("data-buscar-ofertas")) {
+                    buscarOfertasMaterial(consultas, n, c, painel);
+                    return;
+                }
+                const manual = botao.hasAttribute("data-usar-preco-manual");
+                if (!manual) {
+                    const consulta = consultas.get(cat);
+                    const { oferta } = consulta.faixas[Number(botao.dataset.usarOferta)];
+                    c.ofertasPrecos ||= {};
+                    c.ofertasPrecos[cat] = { valor: oferta.price, tamanho: consulta.embalagem.tamanho, titulo: oferta.title, link: oferta.link };
+                }
+                c.escolhas[cat] = manual ? "manual" : "oferta";
+                const y = window.scrollY;
+                renderResultado();
+                window.scrollTo(0, y);
+                toast(manual ? "Preço informado aplicado ao orçamento." : "Oferta aplicada ao orçamento.");
+            };
+        });
+    }
     const on =(id, f) => {
         const b = $(id);
         if (b) b.onclick = f
@@ -835,19 +1157,31 @@ function matTabela(o) {
     if (! cs.length) return "";
     return `<div class="card"><div class="card-head" style="margin-bottom:6px"><h2>Materiais da obra</h2><p class="muted small">Já comprou? Digite quanto pagou. O valor pago substitui o preço de referência e entra no que já foi gasto.</p></div><div class="tbl"><table class="lst"><thead><tr><th>Cômodo</th><th>Material</th><th style="text-align:right">Estimado</th><th style="text-align:right">Valor pago</th><th>Situação</th></tr></thead><tbody>
  ${cs.flatMap(c=>c.resultado.itens.map(i=>{const s=i.ops.find(x=>x.id===i.sel),pg=(c.pagos||{})[i.cat];return `<tr><td>${esc(c.nome)}</td><td><b>${NOMEMAT[i.cat]}</b><br><span class="muted small">${s.texto}</span></td><td class="num" style="text-align:right">${brl(s.custo)}</td>
- <td style="text-align:right"><label class="sr" for="pg-${c.id}-${i.cat}" style="position:absolute;left:-9999px">Valor pago por ${NOMEMAT[i.cat]} em ${esc(c.nome)}</label><input class="pago" id="pg-${c.id}-${i.cat}" data-pago="${c.id}|${i.cat}" inputmode="decimal" placeholder="0,00" value="${pg!=null?fmt(pg):""}"></td>
+ <td style="text-align:right"><label class="sr" for="pg-${c.id}-${i.cat}" style="position:absolute;left:-9999px">Valor pago por ${NOMEMAT[i.cat]} em ${esc(c.nome)}</label><input class="pago" id="pg-${c.id}-${i.cat}" data-pago="${c.id}|${i.cat}" inputmode="decimal" placeholder="0,00" value="${pg!=null?fmt(pg):""}">${pg!=null?`<br><button class="btn-ghost" type="button" data-remover-pago="${c.id}|${i.cat}" aria-label="Excluir gasto de ${NOMEMAT[i.cat]} em ${esc(c.nome)}">Excluir gasto</button>`:""}</td>
  <td>${pg!=null?`<span class="badge b-ok">Comprado</span>${pg<s.custo?`<br><span class="small" style="color:var(--verde-ok)">${brl(s.custo-pg)} abaixo</span>`:pg>s.custo?`<br><span class="small" style="color:var(--atencao)">${brl(pg-s.custo)} acima</span>`:""}`:`<span class="badge b-neu">A comprar</span>`}</td></tr>`})).join("")}</tbody></table></div></div>`
 }
 document.addEventListener("change", e => {
     const el = e.target;
     if (! el.dataset || ! el.dataset.pago) return;
-    const [cid, cat] = el.dataset.pago.split("|");
+    atualizarValorPago(el.dataset.pago, num(el.value));
+});
+$("#v-gastos").addEventListener("pointerdown", e => {
+    if (e.target.closest("[data-remover-pago]")) e.preventDefault();
+});
+$("#v-gastos").addEventListener("click", e => {
+    const botao = e.target.closest("[data-remover-pago]");
+    if (!botao) return;
+    const chave = botao.dataset.removerPago;
+    atualizarValorPago(chave, null);
+    document.getElementById(`pg-${chave.replace("|", "-")}`)?.focus({ preventScroll: true });
+});
+function atualizarValorPago(chave, valor) {
+    const [cid, cat] = chave.split("|");
     const o = obraAtual();
     const c = o.comodos.find(x => x.id === cid);
-    c.pagos = c.pagos || {
-    };
-    const v = num(el.value);
-    if (isFinite(v) && v > 0) c.pagos [cat] = v;
+    c.pagos ||= {};
+    const temValor = Number.isFinite(valor) && valor > 0;
+    if (temValor) c.pagos [cat] = valor;
     else delete c.pagos [cat];
     calcular(c);
     save();
@@ -855,8 +1189,8 @@ document.addEventListener("change", e => {
     renderGastos();
     montarInfos();
     window.scrollTo(0, y);
-    toast(isFinite(v) && v > 0 ? "Valor pago salvo.": "Valor pago removido.")
-});
+    toast(temValor ? "Valor pago salvo." : "Valor pago removido.");
+}
 function exportar(o) {
     const L = [`Dico – ${o.nome}`, `Orçamento: ${o.orcamento?brl(o.orcamento):"não definido"} · Gasto: ${brl(gasto(o))}`, "", ...o.comodos.filter(c => c.resultado).flatMap(c => [`${c.nome}: ${brl(c.resultado.total)}`, ...c.resultado.itens.map(i => {
         const s = i.ops.find(x => x.id === i.sel);

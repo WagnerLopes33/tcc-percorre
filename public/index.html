@@ -345,13 +345,29 @@
                                         </div>
                                         <div class="field">
                                             <label class="lbl" for="d-acab" data-info="O acabamento muda o brilho. <b>Fosco</b> disfarça imperfeições; <b>acetinado</b> e <b>semibrilho</b> são mais fáceis de limpar, bons para cozinha e quarto de criança.">
-                                                Acabamento
+                                                Acabamento <span class="opc">(opcional)</span>
                                             </label>
                                             <select id="d-acab">
+                                                <option value="">Selecione se desejar</option>
                                                 <option>Fosco</option>
                                                 <option>Acetinado</option>
                                                 <option>Semibrilho</option>
                                             </select>
+                                        </div>
+                                        <div class="field">
+                                            <label class="lbl" for="d-tipo-tinta">Tipo de tinta</label>
+                                            <select id="d-tipo-tinta">
+                                                <option>Acrílica</option>
+                                                <option>Látex PVA</option>
+                                                <option>Esmalte sintético</option>
+                                                <option>Epóxi</option>
+                                                <option>Borracha líquida</option>
+                                            </select>
+                                        </div>
+                                        <div class="field">
+                                            <label class="lbl" for="d-cor-tinta">Cor da tinta <span class="opc">(opcional)</span></label>
+                                            <input id="d-cor-tinta" maxlength="40" placeholder="Ex.: branco neve" aria-describedby="d-cor-tinta-ajuda">
+                                            <p class="muted small" id="d-cor-tinta-ajuda">Use o nome da cor no anúncio ou na embalagem para comparar entre marcas.</p>
                                         </div>
                                     </div>
                                     <div class="stack" style="margin-top:14px;gap:10px">
@@ -511,6 +527,11 @@
                                     </div>
                                 </div>
                             </div>
+                            <section class="subsec" id="d-precos" aria-labelledby="d-precos-titulo">
+                                <h2 id="d-precos-titulo">Preços dos materiais</h2>
+                                <p class="muted small">Informe o preço da embalagem, caixa ou barra que pretende comprar. A pesquisa abre em outra aba. Para tinta e selador, use o rendimento por litro e por demão. Se o rótulo informar a cobertura por embalagem e por demão, divida a área pelos litros da embalagem. Campos em branco usam referências do catálogo.</p>
+                                <div class="stack" id="d-precos-campos" style="margin-top:16px"></div>
+                            </section>
                             <p class="hint-err" id="e-det" role="alert" style="margin-top:12px">
                             </p>
                             <div class="actions">

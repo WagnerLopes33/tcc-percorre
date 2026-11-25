@@ -5,7 +5,7 @@ const { join } = require('node:path');
 const { mountAccounts } = require('./accounts');
 
 const priceCategories = {
-  tinta: { label: 'Tinta acrílica', example: 'Suvinil branco 18 L', title: /\btintas? acrilicas?\b/ },
+  tinta: { label: 'Tinta', example: 'Acrílica fosca branco neve 18 L', title: /\b(?:tintas?|esmaltes?|latex pva|borracha liquida)\b/ },
   selador: { label: 'Selador acrílico', example: '18 L', title: /\bselador(?:es)? acrilicos?\b/ },
   massa: { label: 'Massa corrida ou acrílica', query: 'massa para parede', example: 'PVA 25 kg', title: /\bmassas? (?:corridas?|acrilicas?)\b/ },
   piso: { label: 'Piso cerâmico ou porcelanato', query: 'piso cerâmico porcelanato', example: 'acetinado 60 × 60 cm', title: /\b(?:pisos? (?:ceramicos?|antiderrapantes?)|porcelanatos?)\b/ },
@@ -22,6 +22,13 @@ function searchText(value) {
 
 const unrelated = /\b(?:remedios?|medicamentos?|farmacia|paracetamol|dipirona|ibuprofeno|amoxicilina|capsulas?|comprimidos?|celulares?|smartphones?|notebooks?|tenis|brinquedos?)\b/;
 const accessories = /\b(?:aplicador(?:es)?|espacador(?:es)?|nivelador(?:es)?|desempenadeiras?|espatulas?|trinchas?|pinceis|pincel|(?:rolos?|bandejas?) (?:de|para) (?:pintura|tinta)|cortador(?:es)?|discos? (?:diamantados?|de corte)|lixas?|serras?|furadeiras?|brocas?|estiletes?|removedor(?:es)?|limpador(?:es)?|amostras?|cola para rodape|cantoneiras?|clips?|clipes?)\b/;
+const tiposTinta = [
+  [/^acrilica\b/, /\bacrilic[ao]s?\b/],
+  [/^(?:latex )?pva\b/, /\bpva\b/],
+  [/^esmalte sintetico\b/, /^(?=.*\besmaltes?\b)(?=.*\bsintetic[ao]s?\b)/],
+  [/^epoxi\b/, /\bepoxi\b/],
+  [/^borracha liquida\b/, /\bborracha liquida\b/],
+];
 
 function normalize(items) {
   const seen = new Set();
@@ -84,9 +91,10 @@ function createServer({ key = process.env.SERPAPI_API_KEY, fetcher = fetch, allo
         if (!response.ok) return json(502, { error: 'Não foi possível consultar o fornecedor. Confira a chave e a cota da API no servidor.' });
         const data = await response.json();
         if (data.error) return json(502, { error: 'O fornecedor não concluiu a busca. Confira sua conta e tente novamente.' });
+        const tipoTinta = categoria === 'tinta' ? tiposTinta.find(([termo]) => termo.test(searchText(detail)))?.[1] : null;
         const matching = (data.shopping_results || []).filter(item => {
           const title = searchText(String(item.title || ''));
-          return category.title.test(title) && !unrelated.test(title) && !accessories.test(title);
+          return category.title.test(title) && (!tipoTinta || tipoTinta.test(title)) && !unrelated.test(title) && !accessories.test(title);
         });
         offers = normalize(matching).slice(0, 40);
       }

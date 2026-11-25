@@ -141,6 +141,54 @@ test('ofertas preservam origem e são filtradas pela categoria e pelo tipo de pr
   assert.equal(data.source, 'SerpApi / Google Shopping');
 });
 
+test('a busca de tinta aceita títulos que colocam o acabamento antes do tipo de tinta', async t => {
+  const produto = { source: 'Loja', extracted_price: 80, product_link: 'https://example.com' };
+  const base = await running(t, { key: 'chave', fetcher: async () => ({
+    ok: true,
+    json: async () => ({ shopping_results: [
+      { ...produto, title: 'Tinta Fosca Acrílica Branco Neve 18 L' },
+      { ...produto, title: 'Tinta Fosca Esmalte Branco Neve 18 L' },
+    ] }),
+  }) });
+  const params = new URLSearchParams({ categoria: 'tinta', detalhes: 'Acrílica Fosco Branco Neve 18 L' });
+  const response = await fetch(`${base}/api/precos?${params}`);
+  assert.equal(response.status, 200);
+  const data = await response.json();
+  assert.deepEqual(data.offers.map(o => o.title), ['Tinta Fosca Acrílica Branco Neve 18 L']);
+});
+
+test('a categoria tinta aceita busca por PVA sem retornar tinta acrílica', async t => {
+  const produto = { source: 'Loja', extracted_price: 80, product_link: 'https://example.com' };
+  const base = await running(t, { key: 'chave', fetcher: async url => {
+    assert.equal(new URL(url).searchParams.get('q'), 'Tinta Látex PVA branco neve 18 L');
+    return { ok: true, json: async () => ({ shopping_results: [
+      { ...produto, title: 'Latex PVA Branco Neve 18L Clássica Suvinil' },
+      { ...produto, title: 'Tinta Acrílica Fosca Branco Neve 18 L' },
+    ] }) };
+  } });
+  const params = new URLSearchParams({ categoria: 'tinta', detalhes: 'Látex PVA branco neve 18 L' });
+  const response = await fetch(`${base}/api/precos?${params}`);
+  assert.equal(response.status, 200);
+  const data = await response.json();
+  assert.deepEqual(data.offers.map(o => o.title), ['Latex PVA Branco Neve 18L Clássica Suvinil']);
+});
+
+test('a categoria tinta aceita anúncios de borracha líquida', async t => {
+  const produto = { source: 'Loja', extracted_price: 80, product_link: 'https://example.com' };
+  const base = await running(t, { key: 'chave', fetcher: async () => ({
+    ok: true,
+    json: async () => ({ shopping_results: [
+      { ...produto, title: 'Borracha Líquida Fosca Branca 18 L' },
+      { ...produto, title: 'Tinta Acrílica Fosca Branca 18 L' },
+    ] }),
+  }) });
+  const params = new URLSearchParams({ categoria: 'tinta', detalhes: 'Borracha líquida fosca branca 18 L' });
+  const response = await fetch(`${base}/api/precos?${params}`);
+  assert.equal(response.status, 200);
+  const data = await response.json();
+  assert.deepEqual(data.offers.map(o => o.title), ['Borracha Líquida Fosca Branca 18 L']);
+});
+
 test('Express serve a interface e a API, com erro quando falta a chave em produção', async t => {
   const base = await running(t, { key: '', allowDemo: false });
   assert.equal((await fetch(base)).status, 200);

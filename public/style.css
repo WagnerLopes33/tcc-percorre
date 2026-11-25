@@ -851,14 +851,14 @@ details.calc ul {
 
 .sug {
     display: grid;
-    gap: 12px;
-    grid-template-columns: repeat(auto-fit,minmax(220px,1fr));
+    gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
 }
 
 .sopt {
     border: 1px solid var(--linha-forte);
-    border-radius: 14px;
-    padding: 16px;
+    border-radius: var(--r);
+    padding: 18px;
     display: flex;
     flex-direction: column;
     gap: 6px;
@@ -869,6 +869,109 @@ details.calc ul {
     border-color: var(--laranja);
     box-shadow: 0 0 0 1px var(--laranja);
     background: var(--laranja-bg);
+}
+
+.oferta-busca {
+    grid-column: 1 / -1;
+    min-height: 108px;
+    align-items: center;
+    justify-content: center;
+    border-style: dashed;
+    background: var(--fundo);
+    color: var(--floresta);
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.oferta-busca:hover:not(:disabled) {
+    border-color: var(--laranja);
+    background: var(--laranja-bg);
+}
+
+.oferta-busca:disabled {
+    cursor: wait;
+}
+
+.oferta-card {
+    gap: 10px;
+    box-shadow: var(--sombra);
+    overflow-wrap: anywhere;
+}
+
+.oferta-badges {
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.oferta-card h4 {
+    color: var(--floresta);
+    font: 600 1.2rem/1.2 var(--display);
+}
+
+.oferta-preco {
+    margin-top: auto;
+    padding-top: 8px;
+    color: var(--floresta);
+}
+
+.oferta-preco .price {
+    font-size: 1.75rem;
+}
+
+.oferta-subtotal {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 4px 12px;
+    border-top: 1px solid var(--linha);
+    padding-top: 10px;
+    color: var(--floresta);
+}
+
+.oferta-frete {
+    display: block;
+    font-size: .8rem;
+}
+
+.oferta-acoes .btn {
+    padding-inline: 14px;
+}
+
+.oferta-status:not(:empty) {
+    margin-top: 12px;
+}
+
+.ofertas-relacionadas {
+    grid-column: 1 / -1;
+    background: var(--fundo);
+    overflow-wrap: anywhere;
+}
+
+.ofertas-relacionadas summary {
+    color: var(--floresta);
+    cursor: pointer;
+    font-weight: 700;
+}
+
+.ofertas-relacionadas ul {
+    margin: 8px 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.ofertas-relacionadas a {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 4px 12px;
+    padding: 10px 0;
+    border-top: 1px solid var(--linha);
+}
+
+.ofertas-relacionadas small {
+    display: block;
 }
 
 .price {
