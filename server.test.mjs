@@ -38,16 +38,21 @@ test('restringe o projeto aos participantes e libera as avaliações após a con
     headers: { 'Content-Type': 'application/json', ...(cookie && { Cookie: cookie }) },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
-  async function register(nome, tipo) {
-    const response = await call('cadastro', { nome, tipo, email: nome + '@example.com', senha: 'senha-teste' });
+  async function register(nome, tipo, perfil) {
+    const response = await call('cadastro', { nome, tipo, email: nome + '@example.com', senha: 'senha-teste', perfil });
     assert.equal(response.status, 200);
     return { ...(await response.json()).conta, cookie: response.headers.get('set-cookie').split(';')[0] };
   }
   assert.equal((await call('conta')).status, 401);
   const client = await register('Cliente', 'cliente');
-  const professional = await register('Pintor', 'profissional');
+  const perfil = { regiao: 'Zona Leste, São Paulo', servicos: ['pintura'], whatsapp: '11987654321', sobre: 'Atende aos sábados' };
+  assert.equal((await call('cadastro', {
+    nome: 'Pintor', tipo: 'profissional', email: 'Pintor@example.com', senha: 'senha-teste', perfil: { ...perfil, servicos: [] },
+  })).status, 400);
+  const professional = await register('Pintor', 'profissional', perfil);
+  const published = await (await call('profissionais')).json();
+  assert.equal(published[0].sobre, perfil.sobre);
   const stranger = await register('Outro', 'cliente');
-  const perfil = { regiao: 'Zona Leste, São Paulo', servicos: ['pintura'], whatsapp: '11987654321' };
   assert.equal((await call('perfil-profissional', perfil, client.cookie)).status, 403);
   assert.equal((await call('perfil-profissional', { ...perfil, destaque: false }, professional.cookie)).status, 200);
   assert.equal((await call('login', { email: 'Pintor@example.com', senha: 'senha-teste', tipo: 'cliente' })).status, 401);

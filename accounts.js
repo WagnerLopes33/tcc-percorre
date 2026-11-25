@@ -10,6 +10,18 @@ const publicAccount = ({ id, nome, tipo }) => ({ id, nome, tipo });
 const clean = value => typeof value === 'string' ? value.trim() : '';
 const emailOf = value => clean(value).toLowerCase();
 
+function validProfile({ regiao, servicos, whatsapp, sobre } = {}) {
+  const phone = clean(whatsapp).replace(/\D/g, '');
+  if (!clean(regiao) || clean(regiao).length > 100 ||
+      !Array.isArray(servicos) || !servicos.length || servicos.length > 14 ||
+      !servicos.every(item => typeof item === 'string' && /^[a-z_]{1,30}$/.test(item)) ||
+      (clean(whatsapp) && !/^\d{10,11}$/.test(phone)) || clean(sobre).length > 200) return null;
+  return { regiao: clean(regiao), servicos: [...new Set(servicos)], whatsapp: phone,
+    ...(sobre !== undefined && { sobre: clean(sobre) }) };
+}
+
+const profileError = 'Informe uma região, pelo menos um serviço e, se desejar, um WhatsApp com DDD e uma descrição de até 200 caracteres.';
+
 function mountAccounts(app, file = process.env.DICO_DATA_FILE || join(__dirname, '.dico', 'dados.json')) {
   const highlights = new Map(Object.entries(JSON.parse(process.env.DICO_DESTAQUES || '{}')));
   let data;
@@ -31,10 +43,11 @@ function mountAccounts(app, file = process.env.DICO_DATA_FILE || join(__dirname,
     data = next;
   }
   function fail(res, status, erro) { return res.status(status).json({ erro }); }
-  function setSession(res, account) {
+  function setSession(res, account, register = false) {
     const token = randomBytes(32).toString('hex');
     const now = Date.now();
     change(next => {
+      if (register) next.accounts.push(account);
       next.sessions = next.sessions.filter(session => session.expires > now);
       next.sessions.push({ hash: digest(token), user: account.id, expires: now + lifetime });
     });
@@ -62,19 +75,21 @@ function mountAccounts(app, file = process.env.DICO_DATA_FILE || join(__dirname,
     next();
   });
   app.post('/api/dico/cadastro', async (req, res) => {
-    const { nome, tipo, email, senha } = req.body || {};
+    const { nome, tipo, email, senha, perfil } = req.body || {};
     const address = emailOf(email);
     if (!clean(nome) || clean(nome).length > 100 || !['cliente', 'profissional'].includes(tipo) ||
         !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(address) || address.length > 254 ||
         typeof senha !== 'string' || senha.length < 8 || senha.length > 128) {
       return fail(res, 400, 'Confira o nome, o e-mail e a senha de 8 a 128 caracteres.');
     }
+    const profile = tipo === 'profissional' && perfil !== undefined;
+    const parsedProfile = profile && perfil && validProfile(perfil);
+    if (profile && !parsedProfile) return fail(res, 400, profileError);
     const salt = randomBytes(16).toString('hex');
     const hash = (await derive(senha, salt, 64)).toString('hex');
     if (read().accounts.some(account => account.email === address)) return fail(res, 409, 'Este e-mail já está cadastrado.');
-    const account = { id: randomUUID(), nome: clean(nome), tipo, email: address, salt, hash };
-    change(next => next.accounts.push(account));
-    setSession(res, account);
+    const account = { id: randomUUID(), nome: clean(nome), tipo, email: address, salt, hash, ...(parsedProfile && { perfil: parsedProfile }) };
+    setSession(res, account, true);
   });
   app.post('/api/dico/login', async (req, res) => {
     const { email, senha, tipo } = req.body || {};
@@ -107,21 +122,18 @@ function mountAccounts(app, file = process.env.DICO_DATA_FILE || join(__dirname,
     const profile = req.account.tipo === 'profissional' ? {
       perfil: professionalProfile(req.account),
       destaque: highlighted(req.account),
+      destaqueAte: highlighted(req.account) ? highlights.get(req.account.email) : null,
     } : {};
     res.json({ conta: publicAccount(req.account), avaliacao: stats(id), recebidas, ...profile });
   });
   app.post('/api/dico/perfil-profissional', (req, res) => {
     if (req.account.tipo !== 'profissional') return fail(res, 403, 'Esta opção é exclusiva para profissionais.');
-    const { regiao, servicos, whatsapp } = req.body || {};
-    const phone = clean(whatsapp).replace(/\D/g, '');
-    if (!clean(regiao) || clean(regiao).length > 100 ||
-        !Array.isArray(servicos) || !servicos.length || servicos.length > 14 ||
-        !servicos.every(item => typeof item === 'string' && /^[a-z_]{1,30}$/.test(item)) ||
-        (clean(whatsapp) && !/^\d{10,11}$/.test(phone))) {
-      return fail(res, 400, 'Informe uma região, pelo menos um serviço e, se desejar, um WhatsApp com DDD.');
-    }
-    const perfil = { regiao: clean(regiao), servicos: [...new Set(servicos)], whatsapp: phone };
-    change(next => { next.accounts.find(account => account.id === req.account.id).perfil = perfil; });
+    const perfil = validProfile(req.body || {});
+    if (!perfil) return fail(res, 400, profileError);
+    change(next => {
+      const account = next.accounts.find(item => item.id === req.account.id);
+      account.perfil = { ...account.perfil, ...perfil };
+    });
     res.json({ perfil });
   });
   app.post('/api/dico/sair', (req, res) => {

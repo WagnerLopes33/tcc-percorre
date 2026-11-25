@@ -7,63 +7,181 @@
     <link rel="icon" href="assets/dico_icone_app.png">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="inicio.css">
+    <link rel="stylesheet" href="conta.css">
     <script src="dados.js" defer></script>
     <script src="conta.js" defer></script>
     <script src="vlibras.js" defer></script>
 </head>
 <body>
-    <header><div class="bar">
+    <header id="auth-header" hidden>
+        <div class="bar">
+            <a class="logo" href="index.html" aria-label="Dico, ir para o início">
+                <img src="assets/dico_icone_app.png" alt="" width="36" height="36">
+                <span>Dico</span>
+            </a>
+            <nav class="top quick-navigation" id="inicio-nav" aria-label="Principal">
+                <a class="quick-page-link" href="index.html">Início</a>
+                <a class="quick-page-link" href="index.html#profissionais">Profissionais</a>
+                <a class="nav-link" href="calculadora.html">Cálculo rápido ↗</a>
+                <a class="nav-link" href="precos.html">Pesquisar preços ↗</a>
+                <span class="nav-cta">
+                    <a class="btn btn-sec btn-sm" href="conta.html?tipo=cliente">Entrar</a>
+                    <a class="btn btn-primary btn-sm" href="conta.html?tipo=cliente&amp;modo=cadastro">Criar conta</a>
+                </span>
+            </nav>
+        </div>
+    </header>
+    <header id="dashboard-header"><div class="bar">
         <a class="logo" href="index.html" aria-label="Dico, início"><img src="assets/dico_icone_app.png" alt="" width="36" height="36">Dico</a>
-        <nav class="top" aria-label="Principal"><a class="quick-link" href="index.html">Início</a><a class="quick-link" href="index.html#profissionais">Profissionais</a></nav>
+        <nav class="top" aria-label="Principal">
+            <a class="quick-link" id="client-home-link" href="index.html">Início</a>
+            <a class="quick-link account-link" id="professional-panel-link" href="conta.html" aria-current="page" hidden>Painel</a>
+            <a class="quick-link" href="index.html#profissionais">Profissionais</a>
+        </nav>
     </div></header>
     <main>
         <p id="account-status" class="hint-err" role="status"></p>
         <section id="auth" class="auth" aria-labelledby="auth-title" hidden>
             <aside class="auth-art">
-                <h2>Sua obra, do início ao fim.</h2>
-                <p>Vincule quem fez o serviço e compartilhe sua experiência quando o projeto estiver concluído.</p>
-                <img src="assets/dico_no_notebook.png" alt="" width="230">
+                <span class="pill"><i></i><span id="auth-art-label"></span></span>
+                <h2 id="auth-art-title"></h2>
+                <ul id="auth-benefits"></ul>
+                <img id="auth-mascot" src="assets/dico_acenando.png" alt="" width="230">
             </aside>
-            <form id="auth-form" class="stack auth-form">
-                <div class="seg" aria-label="Acesso à conta">
+            <form id="auth-form" class="stack auth-form" novalidate>
+                <div class="seg" role="group" aria-label="Acesso à conta">
                     <button type="button" data-mode="login" aria-pressed="true">Entrar</button>
                     <button type="button" data-mode="cadastro" aria-pressed="false">Criar conta</button>
                 </div>
-                <h1 id="auth-title">Entre no Dico</h1>
-                <fieldset class="account-roles">
-                    <legend>Qual é o seu perfil?</legend>
-                    <label><input type="radio" name="tipo" value="cliente" checked> Cliente</label>
-                    <label><input type="radio" name="tipo" value="profissional"> Profissional</label>
+                <div><h1 id="auth-title" tabindex="-1">Entrar</h1><p id="auth-description" class="muted"></p></div>
+                <ol class="mini-steps" id="auth-steps" aria-label="Etapas do cadastro profissional" hidden>
+                    <li>Conta</li><li>Perfil profissional</li><li>Confirmação</li>
+                </ol>
+                <fieldset class="auth-fields" id="auth-credentials">
+                    <fieldset class="auth-roles">
+                        <legend class="lbl">Você é</legend>
+                        <div class="opts roles">
+                            <label class="opt-card"><input type="radio" name="tipo" value="cliente" checked><span class="face"><span class="ck"></span><img src="assets/dico_com_projeto.png" alt=""><span><span class="t">Vou reformar</span><br><span class="d">Calcular e comprar</span></span></span></label>
+                            <label class="opt-card"><input type="radio" name="tipo" value="profissional"><span class="face"><span class="ck"></span><img src="assets/dico_construindo_anterior.png" alt=""><span><span class="t">Sou profissional</span><br><span class="d">Receber pedidos</span></span></span></label>
+                        </div>
+                    </fieldset>
+                    <label id="name-field" class="field" hidden><span class="lbl" id="name-label">Seu nome</span><input name="nome" maxlength="100" autocomplete="name" disabled></label>
+                    <label class="field"><span class="lbl">E-mail</span><input type="email" name="email" required maxlength="254" autocomplete="email" placeholder="voce@email.com"></label>
+                    <label class="field"><span class="lbl">Senha</span><input type="password" name="senha" required maxlength="128" autocomplete="current-password" placeholder="Sua senha"></label>
                 </fieldset>
-                <label id="name-field" class="field" hidden>Nome<input name="nome" maxlength="100" autocomplete="name" disabled></label>
-                <label class="field">E-mail<input type="email" name="email" required maxlength="254" autocomplete="email"></label>
-                <label class="field">Senha<input type="password" name="senha" required maxlength="128" autocomplete="current-password"></label>
-                <button class="btn btn-primary" id="auth-submit">Entrar</button>
+                <fieldset class="auth-fields" id="signup-profile" hidden disabled>
+                    <label class="field"><span class="lbl">WhatsApp com DDD <span class="opc">(opcional)</span></span><input name="telefone" type="tel" inputmode="tel" maxlength="20" placeholder="(11) 98765-4321"></label>
+                    <fieldset class="auth-roles"><legend class="lbl">Serviços que você faz</legend><div class="chips" id="signup-services"></div></fieldset>
+                    <label class="field"><span class="lbl">Região de atendimento</span><input name="regiao" maxlength="100" required placeholder="Ex.: Zona Leste, São Paulo"></label>
+                    <label class="field"><span class="lbl">Sobre você <span class="opc">(opcional)</span></span><input name="sobre" maxlength="200" placeholder="Ex.: 10 anos de experiência, atende aos sábados"></label>
+                </fieldset>
+                <div id="signup-preview" class="stack" hidden>
+                    <article class="card stack" id="signup-card"></article>
+                    <div class="auth-fee"><strong>Como você paga</strong><p class="small">O cadastro é grátis. A cobrança por serviços fechados pelo Dico está prevista no protótipo.</p></div>
+                </div>
+                <label class="toggle" id="signup-notice" hidden><input type="checkbox" name="ciente" disabled><span><span class="t">Li as informações sobre meu cadastro</span><br><span id="signup-notice-text" class="muted small"></span></span></label>
+                <p class="hint-err" id="auth-error" role="alert" hidden></p>
+                <div class="auth-actions" id="auth-actions">
+                    <button class="btn btn-sec" type="button" id="auth-back" hidden>Voltar</button>
+                    <button class="btn btn-primary" id="auth-submit">Entrar</button>
+                </div>
+                <p class="muted small" id="auth-switch"><span id="auth-switch-text"></span> <button class="btn-ghost" type="button" id="auth-switch-button"></button></p>
             </form>
         </section>
-        <section id="dashboard" class="stack" aria-labelledby="dashboard-title" hidden>
-            <div class="row between"><div><p class="eyebrow" id="dashboard-role"></p><h1 id="dashboard-title"></h1></div><button type="button" id="logout" class="btn btn-sec">Sair</button></div>
-            <div id="reputation" class="card stack"></div>
-            <form id="professional-profile" class="card stack" hidden>
-                <h2>Perfil na rede de profissionais</h2>
-                <label class="field">Região de atendimento<input name="regiao" maxlength="100" placeholder="Ex.: Zona Leste, São Paulo" required></label>
-                <fieldset class="account-roles"><legend>Serviços que você presta</legend><div id="profile-services" class="row"></div></fieldset>
-                <label class="field">WhatsApp público com DDD (opcional)<input name="whatsapp" type="tel" inputmode="tel" maxlength="20"></label>
-                <p id="profile-highlight" class="muted"></p>
-                <p class="hint-err" id="profile-status" role="status"></p>
-                <button class="btn btn-primary">Salvar perfil</button>
-            </form>
-            <form id="invite" class="card stack" hidden>
-                <h2>Vincular profissional à obra</h2>
-                <label class="field">Obra planejada neste navegador<select name="obra" required></select></label>
-                <label class="field">Profissional com conta no Dico<select name="profissional" required></select></label>
-                <p id="invite-help" class="muted"></p>
-                <button class="btn btn-primary">Enviar convite</button>
-            </form>
-            <h2 id="projects-title">Meus projetos</h2>
-            <div id="projects" class="grid" aria-labelledby="projects-title"></div>
+        <div id="dashboard" hidden>
+        <section id="client-dashboard" class="stack" aria-labelledby="dashboard-title">
+            <div class="row between">
+                <div><span class="eyebrow">Painel do cliente</span><h1 id="dashboard-title" tabindex="-1"></h1><p class="muted">Acompanhe suas obras, os convites enviados e as avaliações.</p></div>
+                <button type="button" id="logout" class="btn btn-sec btn-sm">Sair</button>
+            </div>
+            <dl class="dashboard-kpis">
+                <div><dt>Aguardando aceite</dt><dd id="client-kpi-pending"></dd></div>
+                <div><dt>Em andamento</dt><dd id="client-kpi-active"></dd></div>
+                <div><dt>Serviços finalizados</dt><dd id="client-kpi-finished"></dd></div>
+                <div><dt>Sua nota</dt><dd id="client-kpi-rating"></dd><dd class="small muted" id="client-kpi-reviews"></dd></div>
+            </dl>
+            <div class="layout">
+                <section class="card" aria-labelledby="projects-title">
+                    <div class="card-head"><h2 id="projects-title">Meus projetos</h2></div>
+                    <div id="projects" class="stack"></div>
+                </section>
+                <aside class="stack professional-sidebar">
+                    <section class="professional-highlight">
+                        <h3>Suas obras</h3>
+                        <a class="btn btn-primary" href="index.html#novaobra">Começar uma obra</a>
+                        <div class="row"><a class="btn btn-sec btn-sm" href="index.html#obra">Minha obra</a><a class="btn btn-sec btn-sm" href="index.html#gastos">Meus gastos</a></div>
+                    </section>
+                    <form id="invite" class="card stack" hidden>
+                        <h3>Vincular profissional à obra</h3>
+                        <label class="field">Obra planejada neste navegador<select name="obra" required></select></label>
+                        <label class="field">Profissional com conta no Dico<select name="profissional" required></select></label>
+                        <p id="invite-help" class="muted small"></p>
+                        <button class="btn btn-primary">Enviar convite</button>
+                    </form>
+                    <details class="card dashboard-reviews" id="reputation" hidden><summary>Avaliações recebidas</summary><div class="stack" id="client-review-list"></div></details>
+                </aside>
+            </div>
         </section>
+        <section id="professional-dashboard" class="stack" aria-labelledby="professional-title" hidden>
+            <div class="row between">
+                <div><span class="eyebrow">Painel do profissional</span><h1 id="professional-title" tabindex="-1"></h1><p class="muted">Pedidos de orçamento e convites para obras que combinam com seus serviços.</p></div>
+                <div class="row"><span class="badge" id="professional-visibility"></span><button type="button" id="professional-logout" class="btn btn-sec btn-sm">Sair</button></div>
+            </div>
+            <dl class="dashboard-kpis">
+                <div><dt>Pedidos novos</dt><dd id="kpi-new"></dd></div>
+                <div><dt>Em andamento</dt><dd id="kpi-active"></dd></div>
+                <div><dt>Serviços finalizados</dt><dd id="kpi-finished"></dd></div>
+                <div><dt>Sua nota</dt><dd id="kpi-rating"></dd><dd class="small muted" id="kpi-reviews"></dd></div>
+            </dl>
+            <div class="layout">
+                <section class="card" aria-labelledby="professional-requests-title">
+                    <div class="card-head"><h2 id="professional-requests-title">Pedidos de orçamento</h2></div>
+                    <div id="professional-requests" class="stack"></div>
+                </section>
+                <aside class="stack professional-sidebar">
+                    <section class="professional-highlight" id="professional-highlight">
+                        <div class="row between"><span class="badge b-or">Destaque</span><span id="professional-highlight-expiry" class="small"></span></div>
+                        <h3 id="professional-highlight-title"></h3>
+                        <ul><li>No topo da busca da sua região</li><li>Etiqueta “Destaque” no perfil</li><li>As avaliações continuam valendo</li></ul>
+                        <p class="small"><strong>Assinatura de destaque</strong> · valor a definir</p>
+                        <button type="button" class="btn btn-primary" id="highlight-details">Como funciona o destaque</button>
+                    </section>
+                    <section class="card stack professional-profile-card">
+                        <h3>Seu perfil</h3><p class="muted small">É assim que quem reforma vê você.</p>
+                        <div id="professional-preview"></div>
+                        <button type="button" class="btn btn-sec" id="edit-professional">Editar perfil</button>
+                    </section>
+                    <section class="auth-fee">
+                        <h3>Como você paga</h3>
+                        <p class="small">Cadastro grátis. Destaque opcional por assinatura. O percentual sobre serviços fechados está previsto no protótipo.</p>
+                        <a class="btn-ghost" href="index.html#inicio-taxa">Saiba mais</a>
+                    </section>
+                    <details class="card" id="professional-reviews"><summary>Avaliações recebidas</summary><div class="stack" id="professional-review-list"></div></details>
+                </aside>
+            </div>
+        </section>
+        </div>
     </main>
+    <dialog id="profile-dialog" aria-labelledby="profile-dialog-title">
+        <form id="professional-profile" class="stack">
+            <h2 id="profile-dialog-title">Editar perfil</h2>
+            <label class="field">Região de atendimento<input name="regiao" maxlength="100" placeholder="Ex.: Zona Leste, São Paulo" required></label>
+            <fieldset class="auth-roles"><legend class="lbl">Serviços que você presta</legend><div id="profile-services" class="chips"></div></fieldset>
+            <label class="field">WhatsApp público com DDD (opcional)<input name="whatsapp" type="tel" inputmode="tel" maxlength="20"></label>
+            <label class="field">Sobre você (opcional)<input name="sobre" maxlength="200"></label>
+            <p class="hint-err" id="profile-status" role="status"></p>
+            <div class="row between"><button type="button" class="btn btn-sec" id="cancel-professional-edit">Cancelar</button><button class="btn btn-primary">Salvar perfil</button></div>
+        </form>
+    </dialog>
+    <dialog id="highlight-dialog" aria-labelledby="highlight-dialog-title">
+        <form method="dialog" class="stack">
+            <h2 id="highlight-dialog-title">Como funciona o destaque</h2>
+            <p>Com uma assinatura ativa, seu perfil aparece no topo da busca da sua região quando combina com os filtros da busca.</p>
+            <p class="muted">Pagamentos, ativações e cancelamentos são tratados fora do site.</p>
+            <div><button class="btn btn-primary">Entendi</button></div>
+        </form>
+    </dialog>
     <dialog id="project-dialog" aria-labelledby="dialog-title">
         <form id="project-form" class="stack">
             <h2 id="dialog-title"></h2>
@@ -78,6 +196,46 @@
             <div class="row"><button type="button" class="btn btn-sec" id="dialog-cancel">Cancelar</button><button class="btn btn-primary" id="dialog-submit">Confirmar</button></div>
         </form>
     </dialog>
-    <footer>Dico · Planejamento de reformas</footer>
+    <footer class="site" id="auth-footer" hidden>
+        <div class="ft">
+            <div class="ft-brand">
+                <div class="ft-logo"><img src="assets/dico_icone_app.png" width="40" height="40" alt="">Dico</div>
+                <p>Obra sem susto e sem desperdício: a conta certa antes da compra.</p>
+                <div class="ft-ods"><span>ODS 11</span><span>ODS 12</span><span>ODS 13</span></div>
+            </div>
+            <div>
+                <h4>Para quem reforma</h4>
+                <ul>
+                    <li><a href="index.html#novaobra">Começar uma obra</a></li>
+                    <li><a href="index.html#obra">Minha obra</a></li>
+                    <li><a href="index.html#gastos">Meus gastos</a></li>
+                    <li><a href="index.html#profissionais">Encontrar profissionais</a></li>
+                    <li><a href="calculadora.html">Cálculo rápido ↗</a></li>
+                    <li><a href="precos.html">Pesquisar preços ↗</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4>Para profissionais</h4>
+                <ul>
+                    <li><a href="conta.html?tipo=profissional&amp;modo=cadastro">Cadastrar grátis</a></li>
+                    <li><a href="conta.html?tipo=profissional">Entrar no painel</a></li>
+                    <li><a href="index.html#inicio-taxa">Como funciona o percentual</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4>O projeto</h4>
+                <ul>
+                    <li>TCC · Desenvolvimento Web</li>
+                    <li>Instituto Percorre · 2026</li>
+                    <li><a href="https://tcc-percorre.onrender.com" target="_blank" rel="noopener">Site no ar ↗</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="ft-bottom">
+            <span>© 2026 Dico · Protótipo do TCC</span>
+            <span>Cálculos e preços são estimativas e não substituem a orientação de um profissional.</span>
+        </div>
+    </footer>
+    <footer id="dashboard-footer">Dico · Planejamento de reformas</footer>
 </body>
 </html>

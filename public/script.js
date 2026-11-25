@@ -1400,6 +1400,7 @@ function directoryCard(pro, featured) {
         ${featured ? '<span class="tag-dest">Destaque</span>' : ''}
         <div class="pro2-top"><span class="av2" aria-hidden="true">${esc(initials)}</span><div class="pro2-identity"><h3>${esc(pro.nome)}</h3><p class="rate">${rating}</p></div></div>
         <p class="loc">${esc(pro.regiao || 'Região não informada')}</p>
+        ${pro.sobre ? `<p class="muted small">${esc(pro.sobre)}</p>` : ''}
         <div class="tag-row">${services.map(name => `<span class="tag">${esc(name)}</span>`).join('')}</div>
         <div class="pro2-foot">${whatsapp ? `<a class="btn btn-sec btn-sm" href="${esc(whatsapp)}" target="_blank" rel="noopener">WhatsApp</a>` : ''}
             <a class="btn btn-primary btn-sm" href="conta.html?profissional=${encodeURIComponent(pro.id)}">Vincular à obra</a></div>

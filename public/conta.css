@@ -1,0 +1,64 @@
+.auth-art {
+    position: relative;
+    min-height: 620px;
+    gap: 18px;
+    overflow: hidden;
+}
+
+.auth-art h2 { line-height: 1.1; font-weight: 700; }
+.auth-art ul { position: relative; z-index: 1; display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+.auth-art li { display: flex; gap: 10px; font-weight: 600; }
+.auth-art li::before { content: ""; flex: 0 0 6px; height: 11px; margin: 3px 4px 0; border: solid var(--verde); border-width: 0 2px 2px 0; transform: rotate(45deg); }
+.auth-art::after { content: ""; position: absolute; width: 380px; height: 380px; border-radius: 50%; background: var(--laranja); bottom: -170px; left: 50%; transform: translateX(-50%); }
+.auth-art img { position: relative; z-index: 1; margin-bottom: -4px; }
+
+.auth-form { gap: 20px; }
+.auth-form .seg button { font-size: 14px; color: var(--suave); }
+.auth-form .seg button[aria-pressed="true"] { background: var(--papel); color: var(--floresta); box-shadow: 0 1px 3px rgba(19,58,44,.15); }
+.auth-fields, .auth-roles { min-width: 0; margin: 0; padding: 0; border: 0; }
+.auth-fields { display: grid; gap: 20px; }
+.auth-roles legend { margin-bottom: 10px; }
+.auth-roles .roles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.auth-roles .face { flex-direction: row; align-items: center; gap: 12px; padding: 12px 28px 12px 14px; }
+.auth-roles .face img { flex-shrink: 0; width: 44px; height: 44px; object-fit: contain; }
+.auth-roles .ck { right: 9px; top: 9px; width: 16px; height: 16px; }
+
+.mini-steps { display: flex; gap: 8px; margin: 0; padding: 0; list-style: none; font-size: 12.5px; font-weight: 700; color: var(--suave); }
+.mini-steps li { flex: 1; padding-top: 8px; border-top: 3px solid var(--linha-forte); }
+.mini-steps [aria-current="step"] { border-color: var(--laranja); color: var(--floresta); }
+.mini-steps .ok { border-color: var(--verde-ok); color: var(--verde-ok); }
+.auth-actions { display: grid; }
+.auth-actions.with-back { display: flex; justify-content: space-between; gap: 12px; }
+.auth-fee { display: grid; gap: 6px; padding: 16px 18px; border: 1px solid var(--laranja-claro); border-radius: 14px; background: var(--laranja-bg); }
+#signup-card { gap: 8px; overflow-wrap: anywhere; }
+
+.dashboard-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin: 0; }
+.dashboard-kpis > div { display: grid; align-content: start; gap: 3px; padding: 16px 20px; border: 1px solid var(--linha); border-radius: 16px; background: var(--papel); box-shadow: var(--sombra); }
+.dashboard-kpis > div:first-child { background: var(--laranja-bg); border-color: var(--laranja-claro); }
+.dashboard-kpis dt { font-size: 13px; color: var(--suave); }
+.dashboard-kpis dd { margin: 0; }
+.dashboard-kpis dd:first-of-type { font: 600 2rem var(--display); font-variant-numeric: tabular-nums; }
+#professional-requests, #projects, .professional-profile-card { gap: 12px; }
+.professional-request { display: grid; gap: 10px; padding: 16px 18px; border: 1px solid var(--linha); border-radius: 14px; background: var(--papel); }
+.professional-request.new-request { border-color: var(--laranja); box-shadow: 0 0 0 1px var(--laranja); }
+.professional-sidebar { gap: 16px; }
+.professional-sidebar .btn-ghost { justify-self: start; padding-left: 0; }
+.professional-highlight { display: grid; gap: 12px; padding: 22px; border-radius: 18px; background: var(--floresta); color: #d5e1d9; }
+.professional-highlight h3 { color: white; font-size: 20px; }
+.professional-highlight.active { border: 2px solid var(--laranja); background: var(--laranja-bg); color: var(--floresta); }
+.professional-highlight.active h3 { color: var(--floresta); }
+.professional-highlight ul { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; font-size: 14px; }
+.professional-highlight li::before { content: "✓"; margin-right: 8px; color: var(--verde); font-weight: 700; }
+#professional-preview { display: grid; gap: 8px; padding: 14px; border: 1px solid var(--linha); border-radius: 14px; overflow-wrap: anywhere; }
+#professional-reviews[open] summary, .dashboard-reviews[open] summary { margin-bottom: 12px; }
+
+@media (max-width: 900px) {
+    #auth { grid-template-columns: 1fr; }
+    #auth .auth-art { display: none; }
+}
+
+@media (max-width: 600px) {
+    .auth-form { padding: 24px; }
+    .auth-roles .roles { grid-template-columns: 1fr; }
+    .dashboard-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
