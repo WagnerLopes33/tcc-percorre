@@ -3,6 +3,7 @@ const { readFileSync } = require('node:fs');
 const { createServer: createHttpServer } = require('node:http');
 const { join } = require('node:path');
 const { mountAccounts } = require('./accounts');
+const { openAccountStore } = require('./account-store');
 
 const priceCategories = {
   tinta: { label: 'Tinta', example: 'Acrílica fosca branco neve 18 L', title: /\b(?:tintas?|esmaltes?|latex pva|borracha liquida)\b/ },
@@ -44,14 +45,18 @@ function normalize(items) {
   }).sort((a, b) => a.price - b.price);
 }
 
-function createServer({ key = process.env.SERPAPI_API_KEY, fetcher = fetch, allowDemo = process.env.NODE_ENV !== 'production' && process.env.RENDER !== 'true', dataFile } = {}) {
+function createServer({
+  key = process.env.SERPAPI_API_KEY, fetcher = fetch,
+  allowDemo = process.env.NODE_ENV !== 'production' && process.env.RENDER !== 'true',
+  dataFile, accountStore = openAccountStore({ dataFile }),
+} = {}) {
   const app = express();
   const cache = new Map();
   let nextSearch = 0;
 
   app.use(express.json());
   app.use(express.static(join(__dirname, 'public')));
-  mountAccounts(app, dataFile);
+  mountAccounts(app, accountStore);
 
   app.get('/api/status', (req, res) => {
     res.json({ status: 'online', mensagem: 'API funcionando!' });
@@ -107,28 +112,44 @@ function createServer({ key = process.env.SERPAPI_API_KEY, fetcher = fetch, allo
     }
   });
 
-  return createHttpServer(app);
+  const server = createHttpServer(app);
+  if (accountStore.close) server.once('close', () => accountStore.close());
+  return server;
 }
 
 module.exports = { createServer, normalize };
 
-if (require.main === module) {
+async function start() {
   // Carrega apenas as configurações da aplicação, preservando o ambiente existente.
-  try {
-    const env = readFileSync(join(__dirname, '.env'), 'utf8');
-    for (const line of env.split(/\r?\n/)) {
-      const match = line.match(/^\s*(SERPAPI_API_KEY|PORT|DICO_DATA_FILE|DICO_DESTAQUES)\s*=\s*(.*?)\s*$/);
-      if (!match || process.env[match[1]] !== undefined) continue;
-      let value = match[2];
-      if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) value = value.slice(1, -1);
-      else value = value.replace(/\s+#.*$/, '').trim();
-      process.env[match[1]] = value;
+  for (const file of ['.env.local', '.env']) {
+    try {
+      const env = readFileSync(join(__dirname, file), 'utf8');
+      for (const line of env.split(/\r?\n/)) {
+        const match = line.match(/^\s*(SERPAPI_API_KEY|PORT|DICO_DATA_FILE|DICO_DESTAQUES|DATABASE_URL(?:_UNPOOLED)?)\s*=\s*(.*?)\s*$/);
+        if (!match || process.env[match[1]] !== undefined) continue;
+        let value = match[2];
+        if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) value = value.slice(1, -1);
+        else value = value.replace(/\s+#.*$/, '').trim();
+        process.env[match[1]] = value;
+      }
+    } catch (error) {
+      if (error.code !== 'ENOENT') throw error;
     }
-  } catch (error) {
-    if (error.code !== 'ENOENT') throw error;
+  }
+  const accountStore = openAccountStore();
+  if (accountStore.initialize) {
+    await accountStore.initialize();
+    console.log('Postgres conectado.');
   }
   const port = Number(process.env.PORT) || 3000;
-  createServer().listen(port, '0.0.0.0', () => {
+  createServer({ accountStore }).listen(port, '0.0.0.0', () => {
     console.log('Servidor rodando na porta ' + port);
+  });
+}
+
+if (require.main === module) {
+  start().catch(error => {
+    console.error('Falha ao iniciar o servidor:', error.code || error.name);
+    process.exitCode = 1;
   });
 }

@@ -4,7 +4,11 @@
 
 Em **Minha conta**, crie um perfil de cliente ou profissional. Para testar o fluxo completo, use dois perfis de navegador e crie uma conta em cada um. No perfil de cliente, crie uma obra e use **Vincular profissional** para enviar o convite. No painel profissional, aceite. Quando o serviço terminar, finalize o projeto no painel do cliente. Cada participante poderá enviar uma avaliação de 1 a 5 estrelas.
 
-O planejamento da obra e os gastos ficam no navegador. O servidor salva as contas, sessões, vínculos e avaliações em `.dico/dados.json`. Em uma hospedagem com sistema de arquivos temporário, configure `DICO_DATA_FILE` com o caminho de um arquivo em volume persistente. Esse armazenamento usa uma única instância do servidor.
+O planejamento da obra e os gastos ficam no navegador. Quando `DATABASE_URL` está configurada, o servidor usa o Postgres para salvar contas, sessões, vínculos e avaliações. Sem `DATABASE_URL`, o servidor usa `.dico/dados.json` ou o arquivo indicado por `DICO_DATA_FILE` e requer uma única instância.
+
+Para transferir os registros de um arquivo local, defina `DICO_IMPORT_LOCAL_DATA=true` no ambiente do processo durante uma única execução de `npm start`. A importação requer um banco ainda sem registros. Em seguida, remova a variável e reinicie o servidor.
+
+Para atualizar a configuração do Neon, execute `neon deploy` com Node.js 20.19 ou mais recente. O comando grava a URL de consultas em `DATABASE_URL` e a conexão direta, usada para preparar o esquema, em `DATABASE_URL_UNPOOLED`.
 
 O VLibras é carregado do serviço oficial e requer acesso à internet.
 
@@ -19,7 +23,7 @@ O backend usa a [SerpApi / Google Shopping](https://serpapi.com/shopping-results
 
 ### Executar
 
-1. Instale Node.js (mínimo compatível: 18.18; recomendado: versão LTS atual). O servidor carrega `.env` diretamente, sem exigir opções especiais do Node.
+1. Instale Node.js (mínimo compatível: 18.18; recomendado: versão LTS atual). O servidor carrega `.env.local` e `.env`, nessa ordem, e preserva as variáveis que já estão no ambiente.
 2. No terminal da pasta do projeto, execute `npm ci` e depois `npm start`.
 3. Abra `http://localhost:3000` e clique em **Pesquisar preços**.
 
@@ -33,7 +37,7 @@ Sem chave, a pesquisa retorna três ofertas **fictícias**, identificadas como d
 
 ### Render
 
-Use `npm ci` como comando de build e `npm start` como comando de inicialização. Configure `SERPAPI_API_KEY` nas variáveis de ambiente do serviço e publique a nova versão. O Express usa a porta fornecida em `PORT` e serve o site e a API no mesmo domínio. Se a chave estiver ausente no Render ou com `NODE_ENV=production`, a busca retorna HTTP 503.
+Use `npm ci && npm run build` como comando de build e `npm start` como comando de inicialização. Configure `DATABASE_URL` e `DATABASE_URL_UNPOOLED` com as URLs fornecidas por `neon deploy` e adicione `SERPAPI_API_KEY` às variáveis de ambiente do serviço. O Express usa a porta fornecida em `PORT` e serve o site e a API no mesmo domínio. Se a chave estiver ausente no Render ou com `NODE_ENV=production`, a busca retorna HTTP 503.
 
 ### Como funciona a pesquisa
 
